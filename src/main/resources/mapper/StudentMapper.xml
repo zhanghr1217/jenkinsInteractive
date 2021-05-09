@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.StudentDao">
+    <resultMap id="queryStudentGroupByCourseStuMap" type="GroupStudentBean">
+        <result column="student_id" property="sid"></result>
+        <result column="group_id" property="gid"></result>
+    </resultMap>
+
+    <select id="queryStudentById" resultType="StudentBean">
+        SELECT
+            s.id,
+            s.name,
+            s.gender,
+            s.head,
+            s.institute,
+            s.major,
+            s.the_class,
+            s.status
+        FROM
+            student s
+        where s.id = #{student_id}
+    </select>
+    <insert id="addStudentById">
+        insert into student(id,status) values (#{id},0)
+    </insert>
+    <insert id="addStudents">
+        insert into student(id,name,institute,major,the_class,status) values
+        <foreach collection="list" item="s" separator=",">
+            (#{s.id},#{s.name},#{s.institute},#{s.major},#{s.the_class},0)
+        </foreach>
+    </insert>
+    <select id="queryStudentsByGroup" resultType="StudentBean">
+        SELECT
+            s.id,
+            s.name,
+            s.gender,
+            s.head,
+            s.institute,
+            s.major,
+            s.the_class,
+            gs.score
+        FROM
+            group_student gs,
+            student s
+        WHERE
+            gs.group_id = #{group_id}
+          AND gs.student_id = s.id
+          AND gs.status = #{status}
+        <if test="student_id!=null and student_id!=''">
+            and s.id like "%"#{student_id}"%"
+        </if>
+        <if test="student_name!=null and student_name!=''">
+            and s.name like "%"#{student_name}"%"
+        </if>
+        <if test="class_name!=null and class_name!=''">
+            and s.the_class like "%"#{class_name}"%"
+        </if>
+        <if test="major_name!=null and major_name!=''">d
+            and s.major like "%"#{major_name}"%"
+        </if>
+        <if test="institute_name!=null and institute_name!=''">
+            and s.institute like "%"#{institute_name}"%"
+        </if>
+    </select>
+    <select id="queryStudentsIdByGroup" resultType="String">
+        SELECT
+        gs.student_id
+        FROM
+        group_student gs
+        WHERE
+        gs.group_id = #{group_id}
+        AND gs.status = #{status}
+    </select>
+    <select id="queryStudentByCourse" resultType="StudentBean">
+        SELECT
+            s.id,
+            s.name,
+            s.gender,
+            s.head,
+            s.institute,
+            s.major,
+            s.the_class,
+            cs.group_id
+        FROM
+            course_student cs,
+            student s
+        WHERE
+            cs.course_id = #{course_id}
+          AND cs.student_id = s.id
+          AND cs.status = #{status}
+        <if test="student_id!=null and student_id!=''">
+            and s.id like "%"#{student_id}"%"
+        </if>
+        <if test="student_name!=null and student_name!=''">
+            and s.name like "%"#{student_name}"%"
+        </if>
+        <if test="class_name!=null and class_name!=''">
+            and s.the_class like "%"#{class_name}"%"
+        </if>
+        <if test="major_name!=null and major_name!=''">
+            and s.major like "%"#{major_name}"%"
+        </if>
+        <if test="institute_name!=null and institute_name!=''">
+            and s.institute like "%"#{institute_name}"%"
+        </if>
+    </select>
+    <select id="queryStudentIdGroupIdByCourseStu" resultMap="queryStudentGroupByCourseStuMap">
+        SELECT
+        cs.student_id,
+        cs.group_id
+        FROM
+        course_student cs
+        WHERE
+        cs.course_id = #{course_id}
+        AND cs.status = #{status}
+        AND cs.student_id in
+        <foreach collection="sIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+    <select id="queryStudentIdGroupIdByCourseStuId" resultMap="queryStudentGroupByCourseStuMap">
+        SELECT
+        cs.student_id,
+        cs.group_id
+        FROM
+        course_student cs
+        WHERE
+        cs.course_id = #{course_id}
+        AND cs.status = #{status}
+        AND cs.student_id = #{student_id}
+    </select>
+    <delete id="delStudentByCourse">
+        update course_student set status = 1,group_id = "" where course_id = #{course_id} and student_id = #{student_id}
+    </delete>
+    <update id="updateStudentGroupInCourseByCourse">
+        update course_student set group_id = #{group_id} where course_id = #{course_id} and student_id = #{student_id} and status = 0
+    </update>
+    <update id="updateStudentByGroup">
+        update group_student set score = #{score} where group_id = #{group_id} and student_id = #{student_id} and status = 0
+    </update>
+    <update id="recoverStudentStatusByGroup">
+        update group_student set status = 0 where group_id = #{group_id} and student_id = #{student_id}
+    </update>
+    <update id="recoverStudentStatusByCourse">
+        update course_student set status = 0 where course_id = #{course_id} and student_id = #{student_id}
+    </update>
+    <insert id="addStudentToGroup">
+        insert into group_student(group_id,student_id,score,status) values
+        <foreach collection="sIds" item="sid" separator=",">
+            (#{group_id},#{sid},#{score},0)
+        </foreach>
+    </insert>
+    <insert id="addStudentToCourse">
+        insert into course_student(course_id,student_id,status) values (#{course_id},#{student_id},0)
+    </insert>
+    <delete id="delStudentFromGroup">
+        update group_student set status = 1 where group_id = #{group_id} and student_id = #{student_id}
+    </delete>
+    <select id="checkStudent" resultType="int">
+        select count(1)
+        from student
+        where id = #{id}
+    </select>
+    <select id="checkStudentInCourse" resultType="int">
+        select count(1) from course_student where course_id = #{course_id} and student_id = #{student_id}
+    </select>
+    <select id="checkStudentInGroup" resultType="int">
+        select count(1) from group_student where group_id = #{group_id} and student_id = #{student_id}
+    </select>
+    <update id="updateStudentInfo">
+        update student set name = #{name},head = #{head},gender = #{gender} where id = #{id}
+    </update>
+    <insert id="initStudent">
+        insert into student(id,name,gender,head,status) values (#{id},#{name},#{gender},#{head},0)
+    </insert>
+</mapper>

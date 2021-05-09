@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+认证成功
+</body>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<script type="text/javascript">
+
+        var url = null;
+        $.ajax({
+            type:"get",
+            url:"/wxwork/authorize/outUrl",
+            async:false,
+            data:{},
+            success:function (res) {
+                if(res.code==200){
+                    url = res.msg;
+                }
+            },
+            error:function (e) {
+
+            }
+        });
+        if(url!=null){
+            window.location.href = url;
+        }
+</script>
+</html>

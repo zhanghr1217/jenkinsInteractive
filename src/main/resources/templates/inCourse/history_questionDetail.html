@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-main {
+            background-color: #E9EEF3;
+            color: #333;
+            text-align: center;
+            line-height: 100%;
+            overflow-y: auto;
+            height: 800px;
+        }
+
+        body>.el-container {
+            margin-bottom: 40px;
+        }
+    </style>
+
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+    <div id="app">　
+
+        <el-container>
+            <el-header>
+                <el-page-header @back="goBack" content=" 答题详情">
+                </el-page-header>
+               
+            </el-header>
+            <el-main>
+            
+                 
+
+                <el-tabs type="border-card" :stretch=true>
+                    <el-tab-pane label="答题记录" style="overflow-y: auto; height: 480px;">
+                        <template>
+                            <el-table
+                              :data="tableData"
+                              stripe
+                              style="width: 100%">
+                                    <el-table-column prop="student.id" label="学号" fixed width="180" show-overflow-tooltip>
+                                    </el-table-column>
+                
+                                    <el-table-column prop="student.name" label="姓名" width="120">
+                                    </el-table-column>
+
+                                <el-table-column prop="student.major" label="专业" width="180" show-overflow-tooltip>
+                                    </el-table-column>
+                
+                                    <el-table-column prop="student.theClass" label="班级" width="180" show-overflow-tooltip>
+                                    </el-table-column>
+                                <el-table-column prop="group.name" label="小组" width="180" show-overflow-tooltip>
+                                </el-table-column>
+                                    <el-table-column prop="score" label="得分"  show-overflow-tooltip>
+                                    </el-table-column>
+
+                                    <el-table-column  label="分数"  width="120">
+                                        <template slot-scope="scope">
+                                            <el-input v-model="tableData[scope.$index].courseScore"  maxlength="3" placeholder="得分" style="width: 55px" ></el-input>
+                                        </template>
+                                    </el-table-column>
+
+                            </el-table>
+                          </template>
+                    </el-tab-pane>
+                    <!--<el-tab-pane label="未参与" style="overflow-y: auto; height: 480px;">-->
+                        <!--<template>-->
+                            <!--<el-table-->
+                                    <!--:data="tableData"-->
+                                    <!--stripe-->
+                                    <!--style="width: 100%">-->
+                                <!--<el-table-column prop="sid" label="学号" width="120">-->
+                                <!--</el-table-column>-->
+
+                                <!--<el-table-column prop="name" label="姓名" width="120">-->
+                                <!--</el-table-column>-->
+
+                                <!--<el-table-column prop="major" label="专业" width="120">-->
+                                <!--</el-table-column>-->
+
+                                <!--<el-table-column prop="class" label="班级" width="120">-->
+                                <!--</el-table-column>-->
+                                <!--<el-table-column prop="score" label="得分"  show-overflow-tooltip>-->
+                                <!--</el-table-column>-->
+
+                                <!--<el-table-column  label="分数"  width="120">-->
+                                    <!--<template slot-scope="scope">-->
+                                        <!--<el-input v-model="score"  maxlength="3" placeholder="得分" style="width: 55px" ></el-input>-->
+                                    <!--</template>-->
+                                <!--</el-table-column>-->
+
+                            <!--</el-table>-->
+                        <!--</template>-->
+                    <!--</el-tab-pane>-->
+                </el-tabs>
+                  </el-tabs>
+
+                <el-button type="primary" style="float: left" @click="analyse">查看统计</el-button>
+                <el-popconfirm
+                        icon="el-icon-info"
+                        icon-color="red"
+                        title="确定后不可修改"
+                        @confirm="confirm"
+                >
+                    <el-button type="success" slot="reference" style="float: right">确认成绩</el-button>
+                </el-popconfirm>
+
+            </el-main>
+        </el-container>
+
+    </div>
+</body>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return { visible: false ,
+                courseId:"",
+                testCourseId:"",
+                tableData: [],
+
+                sizeForm: {
+                  
+                    theme:'我是题目内容',
+                    domains: [{
+                        value: 'asdad',
+                    },{
+                        value: 'cbbbbb',
+                    },{
+                        value: 'gggg',
+                    }
+                    
+                    ],
+
+                },
+                checkList: []
+            
+            
+            }
+        },
+        methods: {
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            goBack() {
+                window.location.href="/course/test/history?courseId="+this.courseId;
+            },
+            analyse(){
+              window.open("/course/test/history/detail/analyse?courseId="+this.courseId+"&testCourseId="+this.testCourseId);
+            },
+            confirm(){
+              var that = this;
+              $.ajax({
+                  type:"put",
+                  url:"/teacher/test/testStudent/confirm",
+                  contentType: "application/json; charset=utf-8",
+                  data:JSON.stringify({
+                      courseId:that.courseId,
+                      testCourseId:that.testCourseId,
+                      students:that.tableData
+                  }),
+                  success:function (res) {
+                      that.showMes(res);
+                  },
+                  error:function (e) {
+                      that.showErr(e);
+                  }
+              })
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/test/testStudent/"+that.courseId+"/"+that.testCourseId+"/0",
+                    data:{},
+                    success:function (res) {
+                        console.log(res);
+                        that.tableData = res;
+                    },
+                    error:function (e) {
+                        that.showErr(e)
+                    }
+                })
+
+            }
+        },
+        created(){
+            this.courseId = this.getQueryString("courseId");
+            this.testCourseId = this.getQueryString("testCourseId");
+            this.getInfo();
+        }
+    })
+</script>
+
+</html>

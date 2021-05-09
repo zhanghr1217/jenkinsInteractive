@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height:100% ;
+            width: 100%;
+            margin: 0;
+            overflow-y: hidden;
+        }
+        .el-aside{
+            overflow-x:hidden ;
+
+        }
+        .el-menu{
+            border: 0px;
+            list-style: none;
+            position: relative;
+            margin: 0;
+            padding-left: 0;
+            background-color: #FFF;
+            height: 861px;
+        }
+
+    </style>
+
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+<!--    <el-page-header @back="goBack" content="课程详情">-->
+<!--    </el-page-header>-->
+    <el-container style="height:100%; border: 1px solid #eee">
+
+        <el-header>
+            <el-page-header @back="goBack" content="课程详情">
+            </el-page-header>
+        </el-header>
+        <el-container>
+            <el-aside width="220px" id="navi2" style="display: block;border: 0px">
+                <!-- 左导航 -->
+                <div style="height: 30px; margin: 15px 0 0 15px;line-height: 30px;">
+                    <a style="font-size: 10px;color: #2d3b45;">{{termName}}</a>
+                </div>
+                <el-col>
+                    <el-menu default-active="people" class="el-menu-vertical-demo "
+                             @open="handleOpen"
+                             @close="handleClose"
+                             @select="handleSelect"
+                             text-color="#409EFF" active-text-color="#000000">
+                        <el-menu-item index="sign">
+                            <i class="el-icon-location"></i>
+                            <span>签到</span>
+                        </el-menu-item>
+                        <el-menu-item index="sign/reserve">
+                            <i class="el-icon-location"></i>
+                            <span>预定签到</span>
+                        </el-menu-item>
+                        <el-menu-item index="talk">
+                            <i class="el-icon-chat-round"></i>
+                            <span slot="title">讨论</span>
+                        </el-menu-item>
+                        <el-menu-item index="test">
+                            <i class="el-icon-document"></i>
+                            <span slot="title">测试</span>
+                        </el-menu-item>
+                        <el-menu-item index="test/reserve">
+                            <i class="el-icon-document"></i>
+                            <span slot="title">测试预定</span>
+                        </el-menu-item>
+                        <el-menu-item index="test/history">
+                            <i class="el-icon-menu"></i>
+                            <span slot="title">测试记录</span>
+                        </el-menu-item>
+<!--                        <el-submenu index="3">-->
+<!--                            <template slot="title">-->
+<!--                                <i class="el-icon-folder-opened"></i>-->
+<!--                                <span slot="title">资料</span>-->
+<!--                            </template>-->
+<!--                            <el-menu-item-group>-->
+<!--                                <template slot="title">媒体</template>-->
+<!--                                <el-menu-item index="1-1">视频</el-menu-item>-->
+<!--                                <el-menu-item index="1-2">图片</el-menu-item>-->
+<!--                            </el-menu-item-group>-->
+<!--                            <el-menu-item-group title="文档">-->
+<!--                                <el-menu-item index="1-4">ppt</el-menu-item>-->
+<!--                            </el-menu-item-group>-->
+<!--                        </el-submenu>-->
+                        <el-menu-item index="lottery">
+                            <i class="el-icon-thumb"></i>
+                            <span slot="title">抽人</span>
+                        </el-menu-item>
+                        <el-menu-item index="class">
+                            <i class="el-icon-connection"></i>
+                            <span slot="title">班级</span>
+                        </el-menu-item>
+                        <el-menu-item index="people">
+                            <i class="el-icon-s-custom"></i>
+                            <span slot="title">人员</span>
+                        </el-menu-item>
+                        <!--<el-menu-item index="score">-->
+                        <!--<i class="el-icon-menu"></i>-->
+                        <!--<span slot="title">评分</span>-->
+                        <!--</el-menu-item>-->
+                        <!--<el-menu-item index="timer">-->
+                        <!--<i class="el-icon-menu"></i>-->
+                        <!--<span slot="title">计时器</span>-->
+                        <!--</el-menu-item>-->
+
+                        <el-menu-item index="set">
+                            <i class="el-icon-setting"></i>
+                            <span slot="title">设置</span>
+                        </el-menu-item>
+                    </el-menu>
+                </el-col>
+                </el-row>
+
+            </el-aside>
+            <el-container>
+<!--                <div style="font-size: 20px;position: absolute;margin-left: 10px;"><i class="el-icon-s-unfold"  @click=fold()></i></div>-->
+                <!-- 右主页 -->
+                <iframe name= "iFrameName" src="/course/people" frameborder="0" style="width: 100%;height: 100%;">
+
+                </iframe>
+            </el-container>
+        </el-container>
+    </el-container>
+
+</div>
+</body>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                courseId: "",
+                termName: ""
+            }
+        },
+        methods: {
+            handleOpen(key, keyPath) {
+                console.log(key, keyPath);
+            },
+            handleClose(key, keyPath) {
+                console.log(key, keyPath);
+            },
+            handleSelect(key) {
+
+                document.getElementsByName('iFrameName')[0].src = "/course/" + key + "?courseId="+this.courseId;
+            },
+            goBack() {
+                window.location.href = "javascript:history.go(-1)";
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            getTerm(){
+                var that = this;
+                $.ajax({
+                    url:"/teacher/term/alive",
+                    success:function (res) {
+                        that.termName = res.name;
+                    }
+                })
+            }
+        },
+        created() {
+            var id = this.getQueryString("courseId");
+            this.courseId = id;
+            document.getElementsByName('iFrameName')[0].src = "/course/people"+"?courseId="+id;
+            this.getTerm();
+        }
+    })
+</script>
+
+</html>

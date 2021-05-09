@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+
+        .el-container {
+            width: 100%;
+            height: 100%;
+        }
+        .el-checkbox, .el-checkbox__input {
+            white-space: normal;
+            word-break: break-all;
+        }
+
+
+
+
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app"> 　
+    <el-container style="background-color:#f4f4f5;">
+        <template>
+            <el-row :gutter="20" style="height: 100%;width: 100%">
+                <!-- 签到学生 -->
+                <el-col :span="15" :offset="5" style="background-color:#ffffff;">
+                    <h4 style="text-align: center;">{{testName}}</h4>
+                </el-col>
+                <el-col :span="15" :offset="5" style="background-color: #ffffff;height: 84%;overflow-y: auto;">
+                    <template>
+                        <div v-for="(item,index) in data">
+                            <el-row style="border: 1px solid #aaaaaa;margin-bottom: 40px;">
+                                <el-col style="height: 65px;line-height: 60px;border-bottom: 1px solid #aaaaaa;background-color: #f5f5f5;vertical-align: middle;padding: 5px 15px 0px 15px;">
+                                    题目{{index+1}}<span v-if="item.type == '2'">(多选)</span> <span v-if="item.type == '0'">(投票 最多选{{item.maxNum}}项)</span> <span style="float: right;"> {{item.score}}分</span>
+                                </el-col>
+                                <el-container style="padding: 10px 10px 20px 10px;">
+                                    <el-row>
+                                        <el-col style="padding: 25px 5px 25px 20px;border-bottom: 1px solid #dddddd;white-space: pre-wrap;" >{{item.question}}</el-col>
+                                        <template v-if="item.type == '2'">
+                                            <el-checkbox-group  v-model="realAnswer[index].realAnswer">
+                                                <el-col v-for="(g,index1) in item.answer">
+                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-checkbox :label="g.key" style="">{{g.key}}.{{g.value}}</el-checkbox></el-row>
+                                                </el-col>
+                                            </el-checkbox-group>
+                                        </template>
+
+                                        <template  v-else-if="item.type == '1'">
+                                            <el-radio-group v-model="realAnswer[index].realAnswer[0]">
+
+                                                <el-col v-for="g in item.answer">
+                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-radio :label="g.key" style="  width: 100% ; text-overflow: ellipsis; white-space: normal;line-height: 18px;">{{g.key}}.{{g.value}}</el-radio></el-row>
+                                                </el-col>
+
+                                            </el-radio-group>
+                                        </template>
+
+                                        <template  v-else>
+                                            <el-checkbox-group  v-model="realAnswer[index].realAnswer" :max=item.maxNum>
+                                                <el-col v-for="(g,index1) in item.answer">
+                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-checkbox :label="g.key" style="">{{g.key}}.{{g.value}}</el-checkbox></el-row>
+                                                </el-col>
+                                            </el-checkbox-group>
+                                        </template>
+
+                                    </el-row>
+                                </el-container>
+                            </el-row>
+                        </div>
+                    </template>
+                </el-col>
+
+            </el-row>
+
+
+
+            </el-row>
+        </template>
+    </el-container>
+</div>
+
+</body>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                testId:"",
+                courseId:"",
+                testName:"",
+                checkList: ['A','C'],
+                radio:'B',
+                data:[],
+                realAnswer:[],
+                realAnswer2:[]
+
+            }
+        },
+        methods: {
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            showResult(){
+                this.realAnswer = this.realAnswer2;
+
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/course/test/"+that.testId+"/"+that.courseId,
+                    data:{},
+                    success:function (res) {
+                        console.log(res);
+                        that.data = JSON.parse(res.body);
+                        that.testName = res.name;
+                        that.realAnswer = JSON.parse(res.answer);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            }
+        },
+        created() {
+            this.testId = this.getQueryString("testId");
+            this.courseId = this.getQueryString("courseId");
+            this.getInfo();
+        }
+    })
+
+
+</script>
+
+</html>

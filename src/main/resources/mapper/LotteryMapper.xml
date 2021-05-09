@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.LotteryDao">
+    <resultMap id="queryLotteryByCourseMap" type="LotteryBean">
+        <id column="id" property="id"></id>
+        <result column="student_id" property="student.id"></result>
+        <result column="name" property="student.name"></result>
+        <result column="gender" property="student.gender"></result>
+        <result column="institute" property="student.institute"></result>
+        <result column="major" property="student.major"></result>
+        <result column="the_class" property="student.theClass"></result>
+        <result column="create_date" property="createDate"></result>
+    </resultMap>
+    <!--<resultMap id="queryLotteryStudentInfoByGroupMap" type="StudentLotteryBean">-->
+        <!--<result column="id" property="data.id"></result>-->
+        <!--<result column="name" property="data."-->
+    <!--</resultMap>-->
+    <select id="queryLotteryByCourse" resultMap="queryLotteryByCourseMap">
+        select l.id,l.student_id ,s.name,s.gender,s.institute,s.major,s.the_class,l.create_date
+        from lottery l,student s
+        where l.teacher_id = #{teacher_id} and l.course_id = #{course_id} and l.status = #{status} and s.id = l.student_id
+        <if test="student_id!=null and student_id!=''">
+            and s.id like "%"#{student_id}"%"
+        </if>
+        <if test="student_name!=null and student_name!=''">
+            and s.name like "%"#{student_name}"%"
+        </if>
+        <if test="class_name!=null and class_name!=''">
+            and s.the_class like "%"#{class_name}"%"
+        </if>
+        <if test="major_name!=null and major_name!=''">d
+            and s.major like "%"#{major_name}"%"
+        </if>
+        <if test="institute_name!=null and institute_name!=''">
+            and s.institute like "%"#{institute_name}"%"
+        </if>
+        <if test="create_date!=null and create_date!=''">
+            and l.create_date like "%"#{create_date}"%"
+        </if>
+        order by l.create_date desc
+    </select>
+    <insert id="addLotteryByCourse">
+        insert into lottery(id,student_id,create_date,status,teacher_id,course_id)
+        values(#{id},#{student_id},#{create_date},0,#{teacher_id},#{course_id})
+    </insert>
+    <delete id="delLotteryByCourse">
+        update lottery set status = 1 where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id}
+    </delete>
+    <select id="queryLotteryStudentInfoByGroup" resultType="StudentBean">
+        select distinct s.id,s.name,s.head from  group_student gs, student s
+        where s.id = gs.student_id and gs.status = 0 and gs.group_id in
+        <foreach collection="gIds" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

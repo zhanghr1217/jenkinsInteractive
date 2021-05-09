@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<script type="text/javascript">
+    //        https://open.weixin.qq.com/connect/oauth2/authorize?
+    // appid=CORPID&redirect_uri=REDIRECT_URI&response_type=code&scope=snsapi_base&state=STATE#wechat_redirect
+    var redirect_uri;
+    var corp_id;
+    var type;
+    var id;
+
+    function getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return unescape(r[2]);
+        return null;
+    }
+
+    function getAuthorizeParams() {
+        $.ajax({
+            type: "get",
+            url: "/wxwork/authorize/getAuthorizePath",
+            data: {},
+            async: false,
+            success: function (res) {
+                // console.log(typeof (res));
+                var data = JSON.parse(res);
+                // redirect_uri = res.redirect_uri;
+                redirect_uri = data.redirect_uri;
+                corp_id = data.corp_id;
+            },
+            error: function (e) {
+                alert(e.status + " " + e.statusText);
+            }
+
+        })
+    }
+
+    function authorize() {
+        var s = "https://open.weixin.qq.com/connect/oauth2/authorize?" +
+            "appid=" + corp_id + "&redirect_uri=" + redirect_uri + "&response_type=code&scope=snsapi_base&state=State#wechat_redirect";
+        window.location.href = s;
+    }
+
+    function init() {
+
+
+            getAuthorizeParams();
+            authorize();
+
+
+
+    }
+
+    init();
+</script>
+<body>
+
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+        body {
+          overflow-x: hidden;
+          overflow-y: hidden;
+        }
+
+        .el-row {
+            margin-bottom: 20px;
+        }
+
+        .el-col {
+            border-radius: 4px;
+            margin-top: 20px;
+            margin-left: 20px;
+        }
+
+        .bg-purple-dark {
+            background: #99a9bf;
+        }
+
+        .bg-purple {
+            background: #d3dce6;
+        }
+
+        .bg-purple-light {
+            background: #e5e9f2;
+        }
+
+        .grid-content {
+            border-radius: 4px;
+            min-height: 36px;
+        }
+
+        .row-bg {
+            padding: 10px 0;
+            background-color: #f9fafc;
+        }
+
+
+        .bottom {
+            margin-top: 13px;
+            line-height: 12px;
+        }
+
+        .button {
+            padding: 0;
+            float: right;
+        }
+
+        .image {
+            width: 100%;
+            height: 120px;
+            display: block;
+        }
+
+        .clearfix:before,
+        .clearfix:after {
+            display: table;
+            content: "";
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix1 {
+            font-size: 100px;
+            color: cornflowerblue;
+            padding-top: 10px;
+        }
+
+
+        /* 图片上传 */
+        .avatar-uploader .el-upload {
+            border: 1px dashed #d9d9d9;
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-uploader .el-upload:hover {
+            border-color: #409EFF;
+        }
+
+        .avatar-uploader-icon {
+            font-size: 28px;
+            color: #8c939d;
+            width: 178px;
+            height: 178px;
+            line-height: 178px;
+            text-align: center;
+        }
+
+        .avatar {
+            width: 178px;
+            height: 178px;
+            display: block;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="../js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　　
+
+
+    <el-container>
+        <el-form ref="form" :model="sizeForm" label-width="80px" size="mini" style="margin: 3% 0 0 3%;">
+            <el-form-item label="课程名称">
+                <el-input v-model="sizeForm.name"></el-input>
+            </el-form-item>
+            <el-form-item label="课程号">
+                <el-input v-model="sizeForm.number"></el-input>
+            </el-form-item>
+
+            <el-form-item label="课程图片">
+                <el-upload
+                        ref="uploads"
+                        class="avatar-uploader"
+                        :auto-upload="false"
+                        action="/teacher/update/course"
+                        :show-file-list="true"
+                        :on-change="handlePreview"
+                        :on-remove="handleRemove"
+                        :data="sizeForm"
+                        :on-success="success"
+                        :on-error="error"
+                        accept=".jpg,.jpeg,.png"
+                        :limit="1">
+                    <img v-if="imageUrl" :src="imageUrl" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </el-upload>
+            </el-form-item>
+            <el-form-item label="教师">
+                <span>{{teacherName}}</span>
+            </el-form-item>
+
+            <el-form-item size="large">
+                <el-button type="primary" @click="onSubmit">保存</el-button>
+                <el-button @click="quit">取消</el-button>
+                <el-popconfirm
+                        icon="el-icon-info"
+                        icon-color="red"
+                        title="确定删除吗？"
+                        @confirm="deleteCourse"
+                >
+                    <el-button
+                            type="danger"
+                            slot="reference"
+                    >删除
+                    </el-button>
+                </el-popconfirm>
+            </el-form-item>
+        </el-form>
+    </el-container>
+
+
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                courseImg: "",
+                teacherName: "",
+                sizeForm: {
+                    courseId: "",
+                    delivery: false,
+                    name: "",
+                    number: ""
+                },
+                channels: [],
+                imageUrl: '',
+                fileList: [],
+                listLength: 0
+            }
+        },
+        methods: {
+
+            onSubmit() {
+                var that = this;
+                if (this.listLength < 1) {
+                    $.ajax({
+                            url: "/teacher/update/course",
+                            type: "post",
+                            async: false,
+                            data: {
+                                name: that.sizeForm.name,
+                                number: that.sizeForm.number,
+                                courseId: that.sizeForm.courseId
+                            },
+                            success: function (res) {
+                                that.showMes(res);
+                            },
+                            error: function (e) {
+                                that.showMes(e)
+                            }
+                        }
+                    )
+                } else {
+                    this.$refs.uploads.submit();
+                }
+                window.setTimeout(function () {
+                    parent.location.href='/courseList';
+                }, 2000)
+            },
+            quit() {
+                document.getElementById("change").style.display = "none";
+                document.getElementById("default").style.display = "block";
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+
+
+            handleRemove(file, fileList) {
+                this.listLength = 0;
+
+            },
+            handlePreview(file) {
+                this.listLength = 1;
+
+            },
+            success(response, file, fileList) {
+                this.showMes(response);
+
+            },
+            error(err, file, fileList) {
+                this.showMes(err)
+            },
+            deleteCourse(){
+                var that = this;
+                $.ajax({
+                    type:"delete",
+                    url:"/teacher/course/"+that.sizeForm.courseId,
+                    date:{},
+                    success:function (res) {
+                        that.showMes(res);
+                        parent.location.href="/courseList";
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+
+                })
+
+            }
+
+
+        },
+        created() {
+            this.sizeForm.courseId = this.getQueryString("courseId");
+            var that = this;
+            $.ajax({
+                type: "get",
+                url: "/teacher/course/" + that.sizeForm.courseId,
+                data: {},
+                success: function (res) {
+                    console.log(res);
+                    that.sizeForm.name = res.name;
+                    that.sizeForm.number = res.number;
+                    that.teacherName = res.teacher.name;
+                    that.courseImg = res.img;
+                    that.imageUrl = res.img;
+                },
+                error: function (e) {
+                    that.showErr(e);
+                }
+            })
+
+        }
+    })
+</script>
+</html>
+
+</html>

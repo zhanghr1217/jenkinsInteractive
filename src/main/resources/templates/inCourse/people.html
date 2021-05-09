@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+
+        .slider {
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+    <el-container>
+        <el-header>
+            <div class="iconSize" @click="dialogForm2Visible = true">
+                <i class="el-icon-circle-plus-outline">添加人员</i>
+            </div>
+        </el-header>
+        <el-dialog title="添加人员" :visible.sync="dialogForm2Visible">
+            <el-form :model="form2">
+                <el-form-item label="要添加的学号:" :label-width="formLabelWidth">
+                    <el-input
+                            type="textarea"
+                            :autosize="{ minRows: 4, maxRows: 8}"
+                            placeholder="输入要添加的学号(每行一条)"
+                            v-model="form2.textarea">
+                    </el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogForm2Visible = false">取 消</el-button>
+                <el-button type="primary" @click="addStudentToCourse">确 定</el-button>
+            </div>
+        </el-dialog>
+        <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+            <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                <el-option label="姓名" value="studentName"></el-option>
+                <el-option label="学号" value="studentId"></el-option>
+                <el-option label="专业" value="majorName"></el-option>
+                <el-option label="班级" value="className"></el-option>
+                <el-option label="院系" value="instituteName"></el-option>
+            </el-select>
+            <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+        </el-input>
+        <div style="width: 15%;float: right;">
+            <el-button @click="openform">添加至班级</el-button>
+        </div>
+        <template>
+            <el-table ref="multipleTable" :data="tableData" tooltip-effect="dark" style="width: 100%"
+                      max-height="450"
+                      :key="mainTablekey"
+                      v-loading="loading"
+                      element-loading-text="拼命加载中"
+                      element-loading-spinner="el-icon-loading"
+                      @selection-change="handleSelectionChange">
+
+                <el-table-column type="selection" width="55">
+                </el-table-column>
+
+                <!--<el-table-column label="添加时间" width="120">-->
+                <!--<template slot-scope="scope">{{ scope.row.date }}</template>-->
+                <!--</el-table-column>-->
+
+                <el-table-column label="头像" fixed width="100">
+                    <el-avatar icon="el-icon-user-solid" src=""></el-avatar>
+                </el-table-column>
+
+                <el-table-column prop="id" label="学号" fixed width="120">
+                </el-table-column>
+
+                <el-table-column prop="name" label="姓名" width="100">
+                </el-table-column>
+
+                <el-table-column :formatter="formatter" prop="gender" label="性别" width="80">
+                </el-table-column>
+
+                <el-table-column prop="institute" label="院系" width="140">
+                </el-table-column>
+
+                <el-table-column prop="major" label="专业" width="140">
+                </el-table-column>
+
+                <el-table-column prop="theClass" label="班级" width="140">
+                </el-table-column>
+
+                <el-table-column label="分组" show-overflow-tooltip>
+                    <template slot-scope="scope">
+                        <el-button-group v-for="(g,index) in scope.row.groupName" :key="index">
+                            <el-tag size="medium">{{g}}</el-tag>
+                        </el-button-group>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="操作">
+                    <template slot-scope="scope">
+                        <!--<el-button-->
+                                <!--size="mini"-->
+                                <!--@click="handleEdit(scope.$index, scope.row)">详情-->
+                        <!--</el-button>-->
+                        <el-popconfirm
+                                icon="el-icon-info"
+                                icon-color="red"
+                                title="确定删除吗？"
+                                @confirm="handleDelete(scope.$index, scope.row)"
+                        >
+                        <el-button
+                                size="mini"
+                                type="danger"
+                                slot="reference"
+                                >删除
+                        </el-button>
+                        </el-popconfirm>
+                    </template>
+                </el-table-column>
+
+            </el-table>
+            <el-dialog title="选择要分配的小组" :visible.sync="dialogFormVisible">
+                <el-form :model="form" ref="form" :rules="rules">
+                    <el-form-item label="小组" :label-width="formLabelWidth" prop="gid">
+                        <el-select v-model="form.gid" placeholder="请选择">
+                            <el-option
+                                    v-for="item in groups"
+                                    :key="item.id"
+                                    :label="item.name"
+                                    :value="item.id">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="dialogFormVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="addStuToAc">确 定</el-button>
+                </div>
+            </el-dialog>
+
+            <!--<div style="margin-top: 20px;text-align: center;">-->
+            <!--<div style="width: 40%;float: left;">-->
+            <!--&lt;!&ndash; 分页 &ndash;&gt;-->
+            <!--<el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"-->
+            <!--:current-page="currentPage4" :page-sizes="[100, 200, 300, 400]" :page-size="100"-->
+            <!--layout="total, sizes, prev, pager, next, jumper" :total="400">-->
+            <!--</el-pagination>-->
+            <!--</div>-->
+
+            <!--</div>-->
+
+
+        </template>
+    </el-container>
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false
+                ,
+                courseId: "",
+                height: 500,
+                mainTablekey: 1,
+                tableData: [],
+                dialogFormVisible: false,
+                form2: {
+                    name: '',
+                    textarea:''
+                },
+                formLabelWidth: '130px',
+
+
+                multipleSelection: [],
+                select: '',
+                inputCondition: '',
+
+                currentPage1: 5,
+                currentPage2: 5,
+                currentPage3: 5,
+                currentPage4: 4,
+                form: {gid: ''},
+
+                rules:{
+                    gid: [
+                        {required: true, message: '请选择小组', trigger: 'change'}
+                    ]
+                },
+
+                groups: [],
+
+
+                dialogForm2Visible: false,
+                formLabelWidth: '120px'
+            }
+        },
+        methods: {
+            conditionSearch() {
+                //刷新表格数据
+                var that = this;
+                var id = that.getQueryString("courseId");
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/course/students/" + id + "/0?" + that.select + "=" + that.inputCondition,
+                    data: {},
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        // that.channels=result;
+                        that.tableData = result;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+
+            },
+            handleDelete(index, row) {
+                var that = this;
+                console.log(row);
+                $.ajax({
+                    type: "delete",
+                    url: "/teacher/course/student/",
+                    async:false,
+                    data: {
+                        courseId:that.courseId,
+                        studentId:row.id
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        // that.channels=result;
+                        that.showMes(result);
+
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+               this.conditionSearch();
+
+            },
+            openform() {
+                this.dialogFormVisible = true;
+            },
+            handleEdit(index, row) {
+                console.log(index, row);
+            },
+            handleSizeChange(val) {
+                console.log(`每页 ${val} 条`);
+            },
+            handleCurrentChange(val) {
+                console.log(`当前页: ${val}`);
+            },
+            formatter(row, column) {
+                if(row.gender === 1)
+                    return '男';
+                if(row.gender === 2)
+                    return '女';
+                else
+                    return '未定义';
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            addStudentToCourse(){
+              var that = this;
+              $.ajax({
+                  type:"post",
+                  url:"/teacher/course/students",
+                  data:{
+                      sids:that.form2.textarea,
+                      courseId:that.courseId
+                  },
+                  success:function (res) {
+                      if (res.code == 200) {
+                          that.$message({
+                              showClose: true,
+                              message: res.desc,
+                              type: 'success'
+                          });
+                      } else {
+                          that.$message({
+                              showClose: true,
+                              message: res.desc+res.msg,
+                              type: 'error'
+                          });
+                      }
+                  },
+                  error:function (e) {
+                      that.showErr(e);
+                  }
+              });
+                this.dialogForm2Visible = false;
+                window.setTimeout(function () {
+                    window.location.reload(true);
+                }, 1000)
+            },
+            addStuToAc() {
+                console.log(this.multipleSelection);
+                this.$refs['form'].validate((valid) => {
+                    if (valid) {
+                        if (this.multipleSelection.length < 1) {
+                            this.$message({
+                                showClose: true,
+                                message: "请选择学生！",
+                                type: 'error'
+                            });
+                        } else {
+                            var that = this;
+                            $.ajax({
+                                type: "put",
+                                url: "/teacher/addStudentToGroup/",
+                                async: false,
+                                contentType: "application/json;charset=utf-8",
+                                data: JSON.stringify({
+                                    courseId: that.courseId,
+                                    students: that.multipleSelection,
+                                    groupId: that.form.gid
+                                }),
+                                dataType: "json",
+                                success: function (result) {
+                                    console.log(result);
+                                    // that.channels=result;
+                                    that.showMes(result)
+                                },
+                                error: function (e) {
+                                    that.showErr(e)
+                                }
+                            });
+                            this.dialogFormVisible = false;
+                            // window.setTimeout(function () {
+                            //     window.location.reload(true);
+                            // }, 1000)
+                            this.conditionSearch();
+                        }
+                    }else
+                        {
+
+                            this.$message({
+                                showClose: true,
+                                message: "请选择小组！",
+                                type: 'error'
+                            });
+
+                    }
+            });
+
+
+
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            }
+
+        },
+        created() {
+            var that = this;
+            var id = that.getQueryString("courseId");
+            that.courseId = id;
+            $.ajax({
+                type: "get",
+                url: "/teacher/course/students/" + id + "/0",
+                data: {},
+                dataType: "json",
+                success: function (result) {
+                    console.log(result);
+                    // that.channels=result;
+                    that.tableData = result;
+                },
+                error: function (e) {
+                    that.showErr(e)
+                }
+            });
+            $.ajax({
+                type: "get",
+                url: "/teacher/groupsMap/" + id + "/0",
+                data: {},
+                dataType: "json",
+                success: function (result) {
+                    console.log(result);
+                    // that.channels=result;
+                    that.groups = result;
+                },
+                error: function (e) {
+                    that.showErr(e)
+                }
+            });
+        }
+    })
+
+
+</script>
+
+</html>

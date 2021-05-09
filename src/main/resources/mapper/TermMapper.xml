@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.TermDao">
+    <select id="queryAllTerm" resultType="TermBean">
+        select id,name,status from term
+    </select>
+    <select id="queryNowTerm" resultType="TermBean">
+        select id,name,status from term where status = 0
+    </select>
+    <select id="queryTermIdByCourse" resultType="String">
+        select term_id from course where id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </select>
+    <update id="setNowTerm">
+        update term set status = 0 where id = #{id}
+    </update>
+    <insert id="addTerm">
+        insert into term(id,name,status) values (#{id},#{name},#{status})
+    </insert>
+    <update id="outTerm">
+        update term set status = 1 where id != #{id}
+    </update>
+</mapper>

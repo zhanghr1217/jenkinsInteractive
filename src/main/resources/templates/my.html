@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-main {
+            background-color: #E9EEF3;
+            color: #333;
+            text-align: center;
+            line-height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            height: 590px;
+        }
+
+        body>.el-container {
+            margin-bottom: 40px;
+        }
+    </style>
+
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+    <div id="app">　
+
+        <el-container>
+            <el-header>
+                <el-page-header @back="goBack" content=" 个人信息">
+                </el-page-header>
+               
+            </el-header>
+            <el-main>
+                <el-form   label-width="110px" style="margin-left: 20%;width: 60%;">
+                      <el-form-item label="企业微信头像：" >
+                        <div class="block"><el-avatar :size="50" :src="peopleInfo.head"></el-avatar></div>
+                      </el-form-item>
+                    <el-form-item label="工号：">
+                      <el-input readonly:true v-model="peopleInfo.id" disabled></el-input>
+                    </el-form-item>
+                    <el-form-item label="姓名：">
+                        <el-input readonly:true v-model="peopleInfo.name" disabled></el-input>
+                      </el-form-item>
+                      <el-form-item label="性别" >
+                          <el-input readonly:true v-model="gender" disabled></el-input>
+                      </el-form-item>
+                      <el-button type="warning" style="margin-left:15%;" @click="dialogFormVisible = true">更改密码</el-button>
+                      <el-button type="danger" @click="logout">退出登录</el-button>
+                  </el-form>
+            </el-main>
+
+
+<el-dialog title="修改密码" :visible.sync="dialogFormVisible">
+  <el-form :model="form" ref="form" :rules="rules">
+    <el-form-item label="旧密码" :label-width="formLabelWidth" prop="old">
+      <el-input type="password" v-model="form.old" autocomplete="off"></el-input>
+    </el-form-item>
+    <el-form-item label="新密码" :label-width="formLabelWidth" prop="new">
+        <el-input type="password" v-model="form.new" autocomplete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="密码again" :label-width="formLabelWidth" prop="new2">
+        <el-input type="password" v-model="form.new2" autocomplete="off"></el-input>
+      </el-form-item>
+   
+  </el-form>
+
+  <div slot="footer" class="dialog-footer">
+    <el-button @click="dialogFormVisible = false">取 消</el-button>
+    <el-button type="primary" @click="submit">确 定</el-button>
+  </div>
+</el-dialog>
+        </el-container>
+
+    </div>
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            var validatePass = (rule, value, callback) => {
+                if (value === '') {
+                    callback(new Error('请输入密码'));
+                } else {
+                    if (this.form.new !== '') {
+                        this.$refs.form.validateField('new2');
+                    }
+                    callback();
+                }
+            };
+            var validatePass2 = (rule, value, callback) =>
+            {
+                if (value === '') {
+                    callback(new Error('请再次输入密码'));
+                } else if (value !== this.form.new) {
+                    callback(new Error('两次输入密码不一致!'));
+                } else {
+                    callback();
+                }
+            }
+            return { visible: false ,
+                gender:'未定义',
+               peopleInfo: 
+                    {
+
+                    },
+                    formLabelWidth: '120px',
+                    dialogFormVisible: false,
+                    form:{
+                        old:'',
+                        new:'',
+                        new2:''
+                    },
+                rules: {
+                    old: [
+                        {required: true, message: '请输入密码', trigger: 'blur'}
+                    ],
+                    new: [
+                        { validator: validatePass, trigger: 'blur' }
+                    ],
+                    new2: [
+                        { validator: validatePass2, trigger: 'blur' }
+                    ]
+                }
+            
+            }
+        },
+        methods: {
+            goBack() {
+                window.history.back(-1);
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            formatter(row, column) {
+                if(row.gender == 1)
+                    return '男';
+                if(row.gender == 2)
+                    return '女';
+                else
+                    return '未定义';
+            },
+            logout(){
+                parent.location.href="/teacher/logout";
+            },
+            submit(){
+                var that = this;
+                this.$refs['form'].validate((valid) => {
+                    if (valid) {
+                        $.ajax({
+                            type:"put",
+                            url:"/teacher/password",
+                            data:{
+                                oldPassword:that.form.old,
+                                newPassword:that.form.new2
+                            },
+                            success:function (res) {
+                                that.showMes(res);
+                                window.setTimeout(function () {
+                                    window.location.reload(true);
+                                }, 1500)
+                            },
+                            error:function (e) {
+                                that.showErr(e);
+                            }
+                        })
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+
+            }
+            });
+
+
+
+
+            }
+        },
+
+        created(){
+            var that = this;
+            $.ajax({
+                type:"get",
+                url:"/teacher/info",
+                data:{},
+                success:function (res) {
+                    that.peopleInfo = res;
+                    if(res.gender == 1){
+                        that.gender = '男';
+                    }else if(res.gender == 2){
+                        that.gender == '女';
+                    }
+                },
+                error:function (e) {
+                    that.showErr(e);
+                }
+            })
+        }
+    })
+</script>
+
+</html>

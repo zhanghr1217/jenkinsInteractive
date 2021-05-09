@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+  <style>
+    html,
+    body,
+    #app {
+      height: 100%;
+      width: 100%;
+    }
+
+    /* body {
+      overflow-x: hidden;
+      overflow-y: hidden;
+      滚动条
+    } */
+
+    .el-row {
+      margin-bottom: 20px;
+    }
+
+    .el-col {
+      border-radius: 4px;
+      margin-top: 20px;
+      margin-left: 4vw;
+    }
+
+    .bg-purple-dark {
+      background: #99a9bf;
+    }
+
+    .bg-purple {
+      background: #d3dce6;
+    }
+
+    .bg-purple-light {
+      background: #e5e9f2;
+    }
+
+    .grid-content {
+      border-radius: 4px;
+      min-height: 36px;
+    }
+
+    .row-bg {
+      padding: 10px 0;
+      background-color: #f9fafc;
+    }
+
+
+
+    .bottom {
+      margin-top: 13px;
+      line-height: 12px;
+    }
+
+    .button {
+      padding: 0;
+      float: right;
+    }
+
+    .image {
+      width: 100%;
+      height: 120px;
+      display: block;
+    }
+
+    .clearfix:before,
+    .clearfix:after {
+      display: table;
+      content: "";
+    }
+
+    .clearfix:after {
+      clear: both
+    }
+
+    .clearfix1 {
+      font-size: 100px;
+      color: cornflowerblue;
+      padding-top: 10px;
+    }
+
+
+    /* 图片上传 */
+    .avatar-uploader .el-upload {
+      border: 1px dashed #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .avatar-uploader .el-upload:hover {
+      border-color: #409EFF;
+    }
+
+    .avatar-uploader-icon {
+      font-size: 28px;
+      color: #8c939d;
+      width: 178px;
+      height: 178px;
+      line-height: 178px;
+      text-align: center;
+    }
+
+    .avatar {
+      width: 178px;
+      height: 178px;
+      display: block;
+    }
+  </style>
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+  <div id="app">　　
+    <div style="border-bottom: black 1px solid;">
+      <p style="text-align: center;"> 我的课程</p>
+    </div>
+
+    <div id="default" style="display: block;">
+      <el-row :gutter="20">
+        <div v-for="item in channels" :key="item.id" class="item">
+          <el-col :span="5" :xs="22" :sm="5" :lg="5" :xl="5">
+            <el-card :body-style="{ padding: '0px' }">
+              <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png"
+                class="image" :src="item.img">
+              <div style="padding: 4px 10px 10px 20px;">
+                <span>{{item.name}}</span>
+                <div class="bottom clearfix">
+                  <a style="font-size: small;">课程号：{{item.number}}</a>
+                  <el-button type="text" class="button"> <a href= "/course" :href="item.link" class="courseLink" target= "iFrameName"> 进入课程</a></el-button>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+        </div>
+
+
+
+
+      </el-row>
+    </div>
+
+
+  </div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return { visible: false,
+                sizeForm: {
+                    name: '',
+                    number: ''
+                },
+                channels:[
+                    // {id:0,name:"数据结构",Snum:"1177",interact:"33",attend:"447"},
+                    // {id:1,name:"编译原理",Snum:"127",interact:"35",attend:"1447"},
+                    // {id:2,name:"算大设计",Snum:"77",interact:"13",attend:"156"}
+                ],
+
+
+                listLength:0
+
+
+            }
+        },
+        methods:{
+            showErr(response){
+                this.$message({
+                    showClose: true,
+                    message: response.status+" "+ response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response){
+                if(response.code == 200){
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                }else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            show(){
+                document.getElementById("default").style.display="none";
+                document.getElementById("change").style.display="block";
+            },
+
+            quit(){
+                document.getElementById("change").style.display="none";
+                document.getElementById("default").style.display="block";
+            },
+
+
+        },
+        created(){
+            var that = this;
+            $.ajax({
+                type: "get",
+                url: "/teacher/courses/0/0",
+                data: {
+
+                },
+                dataType: "json",
+                success: function(result){
+                    that.channels=result;
+                    for (var i = 0; i < that.channels.length; i++) {
+                        that.channels[i].link="/wxwork/teacher/choice?courseId="+that.channels[i].id
+                    }
+
+                },
+                error:function (e) {
+                    that.showErr(e)
+                }
+            });
+
+        }
+    })
+</script>
+
+</html>

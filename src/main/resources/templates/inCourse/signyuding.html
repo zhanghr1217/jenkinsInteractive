@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+            margin-right: 30px;
+        }
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+    <div id="before" style="display: block;">
+        <el-container>
+            <el-header>
+
+            </el-header>
+            <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+                <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                    <el-option label="标题" value="name"></el-option>
+                    <el-option label="起始" value="begin"></el-option>
+                    <el-option label="分数" value="score"></el-option>
+                </el-select>
+                <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+            </el-input>
+            <template>
+                <!-- 签到列表 -->
+                <el-table :data="tableData" style="width: 100%"
+                          max-height="550">
+                    <el-table-column label="发布时间" fixed width="180">
+                        <template slot-scope="scope">
+                            <i class="el-icon-time"></i>
+                            <span>{{ scope.row.begin }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="标题" width="180" show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <span>{{ scope.row.name }}</span>
+                        </template>
+                    </el-table-column>
+                    <!--<el-table-column label="限制时间" width="180">-->
+                    <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.limitTime }}秒</span>-->
+                    <!--</template>-->
+                    <!--</el-table-column>-->
+                    <el-table-column label="类型" width="120" :formatter="formatter" prop="type">
+                    </el-table-column>
+                    <el-table-column label="参与小组" width="150" show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <el-button-group v-for="(g,index) in scope.row.groupName" :key="index">
+                                <el-tag size="medium">{{g}}</el-tag>
+                            </el-button-group>
+
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="分数" width="120">
+                        <template slot-scope="scope">
+                            <span>{{ scope.row.score }}</span>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column label="操作">
+                        <template slot-scope="scope">
+                            <el-button size="mini" type="danger" plain @click="handleDelete(scope.$index, scope.row)" >取消
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div class="block" style="width: 100%;text-align: center">
+                    <!-- 分页 -->
+                    <el-pagination  @current-change="handleCurrentChange"
+                                    :current-page="currentPage" :page-size="pageSize"
+                                    layout="total, prev, pager, next, jumper" :total="total">
+                    </el-pagination>
+                </div>
+            </template>
+        </el-container>
+    </div>
+
+
+</div>
+
+<!-- 新建签到表单 -->
+
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+
+            return {
+                visible: false
+                ,
+                courseId: "",
+                tableData: [],
+                mainTablekey: 1,
+
+                currentPage: 1,
+                total: 0,
+                pageSize: 15,
+
+
+                select: '',
+                inputCondition: '',
+
+            }
+        },
+        methods: {
+            conditionSearch() {
+                //刷新表格数据
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/signs/" + that.courseId + "/0/1/" + that.currentPage + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+
+
+            handleDelete(index, row) {
+
+                    var that = this;
+                    $.ajax({
+                        type: "delete",
+                        url: "/teacher/sign/cache/"+that.courseId+"/"+row.id,
+                        data: {
+                        },
+                        success: function (res) {
+                            that.showMes(res);
+                            that.conditionSearch();
+                        },
+                        error:function (e) {
+                            that.showErr(e);
+                        }
+                    })
+
+            },
+            formatter(row, column) {
+                if (row.type === 1) {
+                    return "扫码签到";
+                } else if (row.type === 2) {
+                    return "位置签到";
+                } else if (row.type === 3) {
+                    return "手势签到";
+                } else return "其他"
+            },
+            formatter2(row, column) {
+                if (row.alive === 1) {
+                    return "已结束";
+                } else return "正在进行"
+            },
+            formatter3(row, column) {
+                if (row.confirm === 1) {
+                    return "未确认";
+                } else return "已确认"
+            },
+            handleCheckAllChange(val) {
+                if (val === true) {
+                    for (var i = 0; i < this.sizeForm.cities.length; i++) {
+                        this.sizeForm.checkedCities.push(this.sizeForm.cities[i].id);
+                    }
+                } else {
+                    this.sizeForm.checkedCities = [];
+                }
+                this.sizeForm.isIndeterminate = false;
+
+            },
+            handleCheckedCitiesChange(value) {
+                let checkedCount = value.length;
+                this.sizeForm.checkAll = checkedCount === this.sizeForm.cities.length;
+                this.sizeForm.isIndeterminate = checkedCount > 0 && checkedCount < this.sizeForm.cities.length;
+                console.log(this.sizeForm.checkedCities)
+            },
+
+            handleSizeChange(val) {
+                // var that = this;
+                // this.pageSize = val;
+                // $.ajax({
+                //     type: "get",
+                //     url: "/teacher/signs/" + that.courseId + "/0/1?" + that.select + "=" + that.inputCondition,
+                //     data: {
+                //         pageSize: that.pageSize
+                //     },
+                //     dataType: "json",
+                //     success: function (result) {
+                //         // that.channels=result;
+                //         that.tableData = result.list;
+                //         that.currentPage = result.pageNum;
+                //         that.total = result.total;
+                //     },
+                //     error: function (e) {
+                //         that.showErr(e);
+                //     }
+                // });
+                //
+                // this.mainTablekey = Math.random();
+
+
+            },
+            handleCurrentChange(val) {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/signs/" + that.courseId + "/0/" + val + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+            },
+            show() {
+                document.getElementById("before").style.display = "none";
+                document.getElementById("after").style.display = "block";
+            },
+
+
+
+
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            }
+
+        },
+        computed: {
+
+        },
+        watch: {
+
+
+        },
+        created() {
+            var that = this;
+            var id = that.getQueryString("courseId");
+            that.courseId = id;
+            $.ajax({
+                type: "get",
+                url: "/teacher/signs/" + id + "/0/1/1",
+                data: {
+                    pageSize: that.pageSize
+                },
+                dataType: "json",
+                success: function (result) {
+                    console.log(result);
+                    // that.channels=result;
+                    // for (var i = 0; i < that.channels.length; i++) {
+                    //     that.channels[i].link="/course?courseId="+that.channels[i].id
+                    // }
+                    that.tableData = result.list;
+                    that.currentPage = result.pageNum;
+                    that.total = result.total;
+                },
+                error: function (e) {
+                    that.showErr(e)
+                }
+            });
+
+        }
+    })
+
+
+</script>
+
+</html>
+

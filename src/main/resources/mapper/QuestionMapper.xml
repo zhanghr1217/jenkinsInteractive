@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.QuestionDao">
+    <select id="queryQuestionsByCourse" resultType="QuestionBean">
+        select id,name,question,answer,real_answer,type,create_date,score,status from question
+        where  course_id = #{course_id} and teacher_id = #{teacher_id} and status = #{status}
+        <if test="question_id!=null and question_id!=''">
+            and id like "%"#{question_id}"%"
+        </if>
+        <if test="question_name!=null and question_name!=''">
+            and name like "%"#{question_name}"%"
+        </if>
+        <if test="question!=null and question!=''">
+            and question like "%"#{question}"%"
+        </if>
+        <if test="type!=null and type!=''">
+            and type like "%"#{type}"%"
+        </if>
+        <if test="create_date!=null and create_date!=''">
+            and create_date like "%"#{create_date}"%"
+        </if>
+        <if test="score!=null and score!=''">
+            and score like "%"#{score}"%"
+        </if>
+    </select>
+    <select id="queryQuestionByIds">
+        select id,name,question,answer,real_answer,type,create_date,score,status from question
+        where course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0 and id in
+        <foreach collection="qIds" item="qid" separator="," open="(" close=")">
+            #{qid}
+        </foreach>
+    </select>
+    <insert id="addQuestionByCourse">
+        insert into question (id,name,question,answer,real_answer,type,course_id,teacher_id,create_date,score,status)
+        values (#{id},#{name},#{question},#{answer},#{real_answer},#{type},#{course_id},#{teacher_id},#{create_date},#{score},0);
+    </insert>
+    <delete id="delQuestionByCourse">
+        update question set status = 1 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id}
+    </delete>
+    <update id="updateQuestionByCourse">
+        update question set name = #{name},question = #{question},answer=#{answer},real_answer=#{real_answer},score = #{score}
+        where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </update>
+</mapper>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <link rel="stylesheet" href="http://at.alicdn.com/t/font_2346853_uzkwhprqyr.css" th:href="@{/static/css/fonts/font_2346853_uzkwhprqyr.css}">
+    
+
+    <style>
+        html,
+        body,
+        #app {
+            width: 100%;
+            margin: 0%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .cube {
+            width: 100%;
+            margin: 40px 0 30px 14px;
+            border-radius: 7%;
+            height: 8%;
+            font-size: 1vw;
+            /* 自适应单位更改/////////////////////////////////////// */
+            text-align: center;
+            background-color: #ffffff;
+            padding: 0px 0px 0px 0px;
+            border: 2px solid #c7cdd1;
+        }
+
+        .iconfont {
+            width: 80%;
+            font-size: 6vw;
+            /* 自适应单位更改/////////////////////////////////////// */
+            color: #b4b4b4;
+        }
+        .el-scrollbar__wrap{
+            overflow-x:hidden;
+        /* 不显示横向滚动条 */
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div id="app">　
+        <el-scrollbar style="height: 100%;">
+            <!-- 加上内部滚动条//////////////////////////////////////// -->
+<!-- ====================================================页面标题=========================================================== -->
+        <el-row style="width: 100%">
+            <el-col :span="24">
+                <div
+                    style="width: 100%;vertical-align: middle; text-align: center;line-height: 52px;font-size: 18px;border-bottom:1px solid #c7cdd1;">
+                    课程详情</div>
+            </el-col>
+        </el-row>
+<!-- =========================================================新建互动============================================================================ -->
+        <el-row>
+            <el-col :span="21" :offset="1">
+                <div style="width: 100%;font-size: 14px;background-color: #f5f5f5;padding: 10px 0 10px 20px;
+                        margin: 20px 0 0 0;border:1px solid #c7cdd1;border-radius: 4px; text-align: center;">选项</div>
+            </el-col>
+            <el-col :span="8"  :offset="2">
+                <div class="cube" @click="jump('sign')">
+                    <div style="width: 100%;margin-top: 1vw;">
+                        <!-- /* 自适应单位更改 margin-top单位/////////////////////////////////////// */ -->
+                        <i class="iconfont iconqiandao"></i>
+                    </div>
+                    <div style="width: 100%;margin: 0px 0 8px 0px;color: #4297e3;">
+                        <a>签到</a>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="8"  style="margin-left:1.5rem;">
+                <div class="cube" @click="jump('talk')">
+                    <div style="width: 100%;margin-top:  1vw;">
+                  <!-- /* 自适应单位更改 margin-top单位/////////////////////////////////////// */ -->
+                        <i class="iconfont iconrenyuan"></i>
+                    </div>
+                    <div style="width: 100%;margin: 0px 0 8px 0px;color: #4297e3;">
+                        <a>讨论</a>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="8"  :offset="2">
+                <div class="cube" @click="jump('lottery')">
+                    <div style="width: 100%;margin-top:  1vw;">
+                 <!-- /* 自适应单位更改 margin-top单位/////////////////////////////////////// */ -->
+                        <i class="iconfont iconshouzhi"></i>
+                    </div>
+                    <div style="width: 100%;margin: 0px 0 8px 0px;color: #4297e3;">
+                        <a>抽人</a>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="8"  style="margin-left:1.5rem;">
+                <div class="cube" @click="jump('test')">
+                    <div style="width: 100%;margin-top:  1vw;">
+                <!-- /* 自适应单位更改 margin-top单位/////////////////////////////////////// */ -->
+                        <i class="iconfont iconshijuan"></i>
+                    </div>
+                    <div style="width: 100%;margin: 0px 0 8px 0px;color: #4297e3;">
+                        <a>测试</a>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="8" :offset="2">
+                <div class="cube" @click="jump('class')">
+                    <div style="width: 100%;margin-top:  1vw;">
+                <!-- /* 自适应单位更改 margin-top单位/////////////////////////////////////// */ -->
+                        <i class="iconfont iconbanji"></i>
+                    </div>
+                    <div style="width: 100%;margin: 0px 0 8px 0px;color: #4297e3;">
+                        <a>班级</a>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="8"  style="margin-left:1.5rem;">
+                <div class="cube" @click="jump('people')">
+                    <div style="width: 100%;margin-top:  1vw;">
+                <!-- /* 自适应单位更改 margin-top单位/////////////////////////////////////// */ -->
+                        <i class="iconfont iconrenyuan"></i>
+                    </div>
+                    <div style="width: 100%;margin: 0px 0 8px 0px;color: #4297e3;">
+                        <a>人员</a>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="8" :offset="2">
+                <div class="cube" @click="jump('lottery')">
+                    <div style="width: 100%;margin-top:  1vw;">
+                <!-- /* 自适应单位更改 margin-top单位/////////////////////////////////////// */ -->
+                        <i class="iconfont iconshezhi"></i>
+                    </div>
+                    <div style="width: 100%;margin: 0px 0 8px 0px;color: #4297e3;">
+                        <a>设置</a>
+                    </div>
+                </div>
+            </el-col>
+        </el-row>
+        </el-scrollbar>
+
+    </div>
+
+
+
+
+
+</body>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                courseId: ""
+
+            }
+
+        },
+        methods: {
+            jump(path) {
+                window.location = "/course/"+path+"?courseId="+this.courseId;
+            },
+            onSubmit() {
+
+            },
+
+            closeTag(index) {
+                // 关闭正在进行的活动 结束方法写在这里
+                console.log(index);
+                this.acts.splice(index, 1);// 将活动从acts数组移除即不再显示
+
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            }
+       
+
+        },
+        created: function () {
+
+            // $(window.parent.document).find("#tool_content").css("height","1200px");
+            // $(window.parent.document).find("#ifchoice").css("height", "1200px");
+            var userAgent = window.navigator.userAgent;
+
+            if (userAgent.indexOf("Mobile") >= 0) {
+                     $(".cube").css("font-size","6px");
+             }
+            var id = this.getQueryString("courseId");
+            this.courseId = id;
+        },
+
+        watch: {
+
+        }
+    })
+
+
+</script>
+
+</html>

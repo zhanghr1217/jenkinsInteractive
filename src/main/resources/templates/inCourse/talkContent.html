@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            margin: 0%;
+            padding: 0%;
+        }
+
+
+
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app"> 　
+
+    <el-container >
+        <div style="text-align: center;width: 250px;height: 250px;position: absolute;margin:82px 0 0 64px;" >
+            <!-- 二维码 -->
+            <img src="images/sss.png" style="width: 250px;height: 250px;border-radius: 5%;" :src="home_url">
+            <span style="color: #31b8fc;">扫码参与讨论</span>
+        </div>
+        <el-header style="text-align: center;color: rgb(49, 184, 252);">
+            <!--<h4>"讨论主题：{{discuss.discussBody}}"</h4>-->
+        </el-header>
+        <el-main>
+
+
+            <template>
+                <el-row :gutter="24">
+                    <!-- 签到学生 -->
+
+                    <el-col :span="14"   :offset="6" style="border: 1px solid #e3e5e5;background-color: #f0f0f0af;" >
+                        <template >
+                            <el-col :span="3" style="background-color: #f0f0f0af;height: 100%;">
+                                <div style="margin-top: 35%;"><el-avatar shape="square" :size="70" src="images/sss.png"></el-avatar></div>
+                                <p>讨论主题</p>
+                            </el-col>
+                            <el-col :span="21" style="background-color: white;">
+                                    <span style="width:100%;word-break:normal;display:block;overflow-wrap: break-word;margin:25px 0px 47px;height: 90px;">
+                                       {{discuss.discussBody}}
+                                    </span>
+                            </el-col>
+
+                        </template>
+
+
+                    </el-col>
+
+                </el-row>
+
+
+
+
+
+
+
+                <el-row :gutter="24"  v-for="item in discussBody" :key="item.student.id" class="item">
+                    <!-- 签到学生 -->
+
+                    <el-col :span="14" v-if="item.discussBody.length > 0"  :offset="6" style="border: 1px solid #e3e5e5;background-color: #f0f0f0af;" >
+                        <template >
+                            <el-col :span="3" style="background-color: #f0f0f0af;height: 100%;">
+                                <div style="margin-top: 35%;"><el-avatar shape="square" :size="70" src="images/cat.png" :src="item.student.head"></el-avatar></div>
+                                <p>{{item.student.name}}</p>
+                            </el-col>
+                            <el-col :span="21" style="background-color: white;">
+                                    <span style="width:100%;word-break:normal;display:block;overflow-wrap: break-word;margin:25px 0px 47px;height: 90px;">
+                                       {{item.discussBody[0].body}}
+                                    </span>
+                                <div style="text-align: right;"><span style="color: #9999b3;font-size: 13px;">&nbsp;&nbsp;{{item.discussBody[0].date}}</span> <el-button id="btn" type="text" @click="showResponse"></el-button></div>
+                                <div >
+                                <el-card class="box-card" v-if="item.discussBody.length > 1" style="margin-bottom: 3%;background-color: #f7f8fa;display: block;" id="resp">
+                                    <el-container v-for="(g,index) in item.discussBody"  :key="index" >
+
+                                        <el-row v-if="index > 0" :gutter="24" style="width: 100%;">
+                                            <el-col :span="2"><el-avatar shape="square" :size="30" src="images/cat.png" :src="item.student.head"></el-avatar></el-col>
+                                            <el-col :span="5"><div style="font-size: 14px;color:#2d64b3">{{item.student.name}}</div></el-col>
+                                            <el-col :span="17"><span style="width:100%;word-break:normal;display:block;overflow-wrap: break-word;margin: 0px 0 0px 0;">
+                                                        {{g.body}}
+                                                    </span>
+                                                <div style="text-align: right;"><span style="color: #9999b3;font-size: 10px;"  @click="showResponse">{{g.date}}</span></div>
+                                            </el-col>
+                                        </el-row>
+
+                                    </el-container>
+                                </el-card>
+                                </div>
+                            </el-col>
+
+                        </template>
+
+
+                    </el-col>
+
+                </el-row>
+
+
+            </template>
+        </el-main>
+        <div style="position: absolute;margin-top: 44%;margin-left: 83%">  <el-button type="danger" size="medium"
+          icon="el-icon-close" @click="stopDiscuss" circle></el-button></div>
+
+    </el-container>
+
+
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                activeName: 'first',
+                courseId:"",
+                discussId:"",
+                textarea: '',
+                home_url: '',
+                discuss:{},
+                discussBody:[]
+            }
+        },
+        methods: {
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            showResponse(){
+                if(this.btnFlag==0){
+                    document.getElementById("btn").innerHTML="收起"
+                    document.getElementById("resp").style.display="block";
+                    this.btnFlag=1;
+                }
+                else{
+                    document.getElementById("btn").innerHTML="回复(3)"
+                    document.getElementById("resp").style.display="none";
+                    this.btnFlag=0;
+                }
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            refresh(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/discuss/studentInfo/"+that.courseId+"/"+that.discussId+"/0",
+                    data:{},
+                    success:function (res) {
+                        console.log(res);
+                        that.discussBody = res;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+
+                })
+            },
+            stopDiscuss(){
+                var that = this;
+                $.ajax({
+                    type:"delete",
+                    url:"/teacher/discuss/stop",
+                    data:{
+                        id:that.discussId,
+                        courseId:that.courseId
+                    },
+                    success:function (res) {
+                        that.showMes(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            getTheme(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/discuss/theme/"+that.discussId,
+                    data:{},
+                    success:function (res) {
+                        that.discuss = res;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+
+                })
+            }
+        },
+        created() {
+            this.courseId = this.getQueryString("courseId");
+            this.discussId = this.getQueryString("discussId");
+            this.home_url = "/teacher/discuss/code/"+this.courseId+"/"+this.discussId;
+            this.getTheme();
+            this.refresh();
+            console.log(this.home_url);
+            setInterval(() => {this.refresh()},3000);
+        }
+    })
+
+
+</script>
+
+</html>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.UserDao">
+    <resultMap id="TeacherMap" type="TeacherBean">
+        <id property="id" column="id"></id>
+        <result property="name" column="name"></result>
+        <result property="gender" column="gender"></result>
+        <result property="age" column="age"></result>
+        <result property="tel" column="tel"></result>
+        <result property="status" column="status"></result>
+    </resultMap>
+    <select id="queryAllTeacher" resultMap="TeacherMap">
+        SELECT t.id,t.name,t.gender,t.age,t.tel,t.status  from user u,teacher t WHERE t.id = u.id and t.status = #{status}
+    </select>
+    <select id="loginTeacher" resultType="TeacherBean">
+        SELECT
+            t.id,
+            t.name,
+            t.gender,
+            t.birthday,
+            t.tel,
+            t.head,
+            t.status
+        FROM
+            user u,
+            teacher t
+        WHERE
+            t.id = #{id}
+          AND u.id = #{id}
+          AND u.status = 0
+          AND t.status = 0
+          AND u.password = #{password}
+    </select>
+    <select id="queryTeacherInfo" resultType="TeacherBean">
+        SELECT
+            t.id,
+            t.name,
+            t.gender,
+            t.birthday,
+            t.tel,
+            t.head,
+            t.status
+        FROM
+            teacher t
+        WHERE
+            t.id = #{id}
+    </select>
+    <insert id="addTeacher">
+        insert into teacher(id,name,head,status) values
+        <foreach collection="list" item="teacher" separator=",">
+            (#{teacher.id},#{teacher.name},#{teacher.head},0)
+        </foreach>
+    </insert>
+    <insert id="addTeacherUser">
+        insert into user(id,password,role,status) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id},#{item.password},#{item.role},0)
+        </foreach>
+    </insert>
+    <delete id="delTeacher">
+        update teacher set status = 1 where id = #{id}
+    </delete>
+    <delete id="delUser">
+        update user set status = 1 where id = #{id}
+    </delete>
+    <update id="updateTeacher">
+        update teacher set name = #{name},gender = #{gender},birthday = #{birthday},tel = #{tel},head = #{head} where id = #{id} and status = 0
+    </update>
+    <update id="updateTeacherWXWork">
+        update teacher set name = #{name},gender = #{gender},head = #{head} where id = #{id} and status = 0
+    </update>
+    <select id="checkTeacher" resultType="int">
+        select count(1) from teacher where id = #{id}
+    </select>
+    <update id="updatePassword">
+        update user set password = #{new_password} where id = #{id} and password = #{old_password} and status = 0
+    </update>
+</mapper>

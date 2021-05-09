@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        .lotterybox{
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="lotterybox">
+</div>
+
+
+<link rel="stylesheet" type="text/css" href="res/lottery.css" th:href="@{/static/css/lottery.css}">
+<script src="https://cdn.bootcss.com/zepto/1.2.0/zepto.min.js"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<!--<script type="text/javascript" src="res/lottery.js" th:src="@{/static/js/lottery.js}"></script>-->
+<script type="text/javascript" src="res/lottery.js" th:src="@{/static/js/lottery.compact.min.js}"></script>
+<script>
+    var lotteryData = [];
+    var courseId = "";
+    function getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return unescape(r[2]);
+        return null;
+    }
+    function init() {
+
+        var gId = getQueryString("groupId");
+        var type = getQueryString("type");
+        courseId = getQueryString("courseId");
+        var groupId = gId.split(",");
+        $.ajax({
+            type:"post",
+            url:"/teacher/course/lottery/students/info",
+            contentType: 'application/json',
+            async:false,
+            data:JSON.stringify({
+                groupId:groupId
+            }),
+            success:function (res) {
+                for (var i = 0; i < res.length; i++) {
+                    var obj = {};
+                    obj.name = res[i].name;
+                    obj.avatar = res[i].head;
+                    var data = {};
+                    data.name = res[i].name;
+                    data.id = res[i].id;
+                    obj.data = data;
+                    lotteryData.push(obj);
+                }
+            },
+            error:function (e) {
+                alert(e.statusText);
+            }
+        });
+
+        $.lottery({
+            el: ".lotterybox",                           // 在哪里输出抽奖的dom，使用jquery选择器
+            // timeout: 10,                              // 抽奖自动停止时间（秒）
+            once: type == 0,                               // 每人只能中奖一次（防止重复中奖）
+            title: "name",                         // 中奖界面显示的标题 data[key]
+            subtitle: "id",                        // 中奖界面显示的副标题 data[key]
+            data: lotteryData,                                 // 直接传入抽奖者数据
+            confetti: true,                           // 中奖时候显示小彩带动画
+            showbtn: false,                            // 显示抽奖控制按钮
+            speed: 200,                               // 随机到下一个参与者的间隔时间，单位毫秒
+            number: 1                                 // 每轮的中奖人数
+        });
+        var b = $(".dh-lottery");
+        var c = '<div class="actions" style="display: flex; position: fixed; right: 20px; bottom: 20px;" >         <a class="button primary" id="dh-history-show"><i class="dh-icon dh-icon-dice">💾<svg><use xlink:href="#dh-save"></use></svg></i></a>        <a class="button primary" id="dh-lottery-go"><i class="dh-icon dh-icon-dice">🎲<svg><use xlink:href="#dh-dice"></use></svg></i></a>    </div>';
+        b.append(c);
+        document.getElementById('dh-history-show').onclick=show;
+        document.getElementById('dh-lottery-go').onclick=start;
+
+
+    }
+    init();
+
+
+    function get() {
+        console.log($.lottery('winners', 'get'));
+    }
+    function start() {
+
+        if($("#dh-lottery-go").attr('class').indexOf("success")!=-1){
+            stop();
+        }else {
+            $.lottery('start');
+        }
+    }
+    function stop() {
+        $.lottery('stop');
+        var obj = $.lottery('winners', 'get');
+        var obj2 = [];
+        console.log(obj);
+        for (var i = 0; i < obj.length; i++) {
+            if(typeof(obj[i]) != "undefined"){
+                obj2.push(obj[i].data.id);
+            }
+        }
+        $.ajax({
+            type:"post",
+            contentType: 'application/json',
+            url:"/teacher/course/lottery",
+            data:JSON.stringify({
+                courseId:courseId,
+                studentIds:obj2
+            }),
+            success:function (res) {
+
+            },
+            error:function (e) {
+
+            }
+        })
+    }
+    function show() {
+        $.lottery('history', 'show');
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.DiscussDao">
+    <resultMap id="queryDiscussStudentByCourseMap" type="DiscussStudentBean">
+        <result column="discuss_id" property="discuss.id"></result>
+        <result column="student_id" property="student.id"></result>
+        <result column="name" property="student.name"></result>
+        <result column="major" property="student.major"></result>
+        <result column="the_class" property="student.theClass"></result>
+        <result column="group_id" property="group.id"></result>
+        <result column="group_name" property="group.name"></result>
+        <result column="discuss_date" property="discussDate"></result>
+        <result column="body" property="body"></result>
+        <result column="score" property="score"></result>
+        <result column="status" property="status"></result>
+        <result column="confirm" property="confirm"></result>
+    </resultMap>
+    <resultMap id="queryDiscussCourseByCourseMap" type="DiscussCourseBean">
+        <result column="id" property="id"></result>
+        <result column="discuss_id" property="discuss.id"></result>
+        <result column="limit" property="limit"></result>
+        <result column="name" property="name"></result>
+        <result column="discuss_body" property="discussBody"></result>
+        <result column="create_date" property="createDate"></result>
+        <result column="status" property="status"></result>
+        <result column="alive" property="alive"></result>
+        <result column="group_id" property="groupId"></result>
+    </resultMap>
+    <resultMap id="queryDiscussStudentInfoByDiscussMap" type="DiscussStudentBean">
+        <result column="discuss_id" property="discuss.id"></result>
+        <result column="student_id" property="student.id"></result>
+        <result column="name" property="student.name"></result>
+        <result column="head" property="student.head"></result>
+        <result column="body" property="body"></result>
+        <result column="discuss_date" property="discussDate"></result>
+    </resultMap>
+    <select id="queryDiscussByCourse" resultType="DiscussBean">
+        select id,name,theme,date,score,status from discuss
+        where course_id = #{course_id} and teacher_id = #{teacher_id} and status = #{status}
+        <if test="discuss_id!=null and discuss_id!=''">
+            and id like "%"#{discuss_id}"%"
+        </if>
+        <if test="discuss_name!=null and discuss_name!=''">
+            and name like "%"#{discuss_name}"%"
+        </if>
+        <if test="theme!=null and theme!=''">
+            and theme like "%"#{theme}"%"
+        </if>
+        <if test="date!=null and date!=''">
+            and date like "%"#{date}"%"
+        </if>
+        <if test="score!=null and score!=''">
+            and score like "%"#{score}"%"
+        </if>
+    </select>
+    <select id="queryDiscussById" resultType="DiscussBean">
+        select id,name,theme,date,score,status from discuss
+        where course_id = #{course_id} and teacher_id = #{teacher_id} and id = #{id}
+    </select>
+    <delete id="delDiscussByCourse">
+        update discuss set status = 1 where id = #{id} and  course_id = #{course_id} and teacher_id = #{teacher_id}
+    </delete>
+    <update id="updateDiscussByCourse">
+        update discuss set name = #{name},theme = #{theme},score = #{score}
+        where id = #{id} and  course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </update>
+    <insert id="addDiscussByCourse">
+        insert into discuss(id,name,theme,date,course_id,teacher_id,score,status)
+        values (#{id},#{name},#{theme},#{date},#{course_id},#{teacher_id},#{score},0)
+    </insert>
+    <select id="queryDiscussCourseByCourse" resultType="DiscussCourseBean">
+        select dc.id,dc.name,dc.discuss_body,dc.create_date,dc.status,dc.alive,dc.group_id,dc.confirm
+        from discuss_course dc
+        where dc.course_id = #{course_id} and dc.teacher_id = #{teacher_id} and dc.status = #{status}
+        <if test="id!=null and id!=''">
+            and dc.id like "%"#{id}"%"
+        </if>
+        <if test="name!=null and name!=''">
+            and dc.name like "%"#{name}"%"
+        </if>
+        <if test="date!=null and date!=''">
+            and dc.create_date like "%"#{date}"%"
+        </if>
+        order by dc.create_date desc
+    </select>
+    <select id="queryDiscussCourseThemeByIdTeacher" resultType="DiscussCourseBean">
+        select dc.id,dc.name,dc.discuss_body,dc.create_date
+        from discuss_course dc
+        where dc.id = #{id} and dc.teacher_id = #{teacher_id} and dc.status = 0
+    </select>
+    <select id="queryDiscussCourseThemeByIdStudent" resultType="DiscussCourseBean">
+        select dc.id,dc.name,dc.discuss_body,dc.create_date
+        from discuss_course dc
+        where dc.id = #{id} and dc.status = 0
+    </select>
+    <insert id="addDiscussCourseByCourse">
+        insert into discuss_course(id,name,discuss_body,course_id,teacher_id,create_date,status,alive,group_id,confirm) values
+            (#{id},#{name},#{discuss_body},#{course_id},#{teacher_id},#{create_date},0,0,#{group_id},1)
+    </insert>
+    <delete id="delDiscussCourseByCourse">
+        update discuss_course set status = 1 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id}
+    </delete>
+    <update id="updateDiscussCourseByCourse">
+        update discuss_course set name = #{name} where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </update>
+    <update id="outDiscussCourseByCourse">
+        update discuss_course set alive = 1 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </update>
+    <select id="queryDiscussStudentByCourse" resultMap="queryDiscussStudentByCourseMap">
+        select ds.discuss_id,ds.student_id,s.name,s.major,s.the_class,ds.group_id,cg.name group_name,ds.body,ds.discuss_date,ds.score,ds.status,ds.confirm
+        from discuss_student ds,student s,course_group cg
+        where ds.discuss_id = #{discuss_id} and ds.student_id = s.id and ds.status = #{status} and ds.group_id = cg.id
+    </select>
+    <select id="queryDiscussStudentInfoByDiscuss" resultMap="queryDiscussStudentInfoByDiscussMap">
+        select distinct ds.discuss_id,ds.student_id,s.name,s.head,ds.body, ds.discuss_date
+        from discuss_student ds,student s
+        where ds.discuss_id = #{discuss_id} and ds.student_id = s.id and ds.status = #{status} order by ds.discuss_date desc
+    </select>
+    <select id="queryDiscussStudentBodyByStudent" resultType="String">
+        select ds.body
+        from discuss_student ds
+        where ds.discuss_id = #{discuss_id} and ds.status = #{status} and ds.student_id = #{student_id}
+    </select>
+    <select id="queryScoreById" resultType="Double">
+        select score from discuss_student where discuss_id = #{discuss_id} and student_id = #{student_id} and group_id = #{group_id} and status = 0
+    </select>
+    <delete id="delDiscussStudentByCourse">
+        update discuss_student set status = 1 where discuss_id = #{discuss_id} and student_id = #{student_id} and group_id = #{group_id}
+    </delete>
+    <insert id="addDiscussStudentByCourse">
+        insert into discuss_student(discuss_id,student_id,score,status,confirm,group_id) values
+        <foreach collection="list" item="list" separator=",">
+            (#{discuss_id},#{list.sid},0,0,1,#{list.gid})
+        </foreach>
+    </insert>
+    <update id="updateDiscussStudentByCourse">
+        update discuss_student set score = #{score} , confirm = 0
+        where discuss_id = #{discuss_id} and student_id = #{student_id} and group_id = #{group_id} and status = 0
+    </update>
+    <update id="updateDiscussStudentByStudent">
+        update discuss_student set body = #{body},discuss_date = #{date}
+        where discuss_id = #{discuss_id} and student_id = #{student_id} and status = 0
+    </update>
+    <update id="confirmDiscussStudentByCourse">
+        update discuss_student set score = #{score} , confirm = 0
+        where discuss_id = #{discuss_id} and group_id = #{group_id} and student_id = #{student_id} and status =0  and confirm = 1
+    </update>
+    <select id="checkDiscussCourse" resultType="int">
+        select count(1) from discuss_course where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and status = 0
+    </select>
+    <select id="checkDiscussCourseAlive" resultType="int">
+        select count(1) from discuss_course where id = #{id} and status = 0 and alive = 0
+    </select>
+    <select id="checkDiscussStudent" resultType="int">
+        select count(1) from discuss_student where discuss_id = #{discuss_id} and student_id = #{student_id} and status = 0
+    </select>
+    <update id="confirmDiscuss">
+        update discuss_course set confirm = 0
+        where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and confirm = 1 and status = 0
+    </update>
+</mapper>

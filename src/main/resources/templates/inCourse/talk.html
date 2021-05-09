@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<script src="js/wangEditor.min.js" th:src="@{/static/js/wangEditor.min.js}"></script>
+<body>
+
+<div id="app">　
+    <div id="before" style="display: block;">
+        <el-container>
+            <el-header>
+                <div class="iconSize">
+                    <i class="el-icon-circle-plus-outline" @click="show">新建讨论</i>
+                </div>
+            </el-header>　
+            <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+                <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                    <el-option label="标题" value="name"></el-option>
+                    <el-option label="日期" value="date"></el-option>
+                </el-select>
+                <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+            </el-input>
+            <template>
+                <el-table :data="tableData" style="width: 100%"  max-height="450">
+                    <el-table-column label="讨论名称" fixed width="150" show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <span>{{ scope.row.name }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="发布日期"  width="180">
+                        <template slot-scope="scope">
+                            <i class="el-icon-time"></i>
+                            <span>{{ scope.row.createDate }}</span>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column label="主题" width="200" show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <span>{{ scope.row.discussBody }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="参与小组" width="150" show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <el-button-group v-for="(g,index) in scope.row.groupName" :key="index">
+                                <el-tag size="medium">{{g}}</el-tag>
+                            </el-button-group>
+
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="状态" width="100" :formatter="formatter2" prop="alive">
+                    </el-table-column>
+                    <el-table-column label="确认" width="100" :formatter="formatter3" prop="confirm">
+                    </el-table-column>
+                    <el-table-column label="操作" width="280">
+                        <template slot-scope="scope">
+                            <el-button size="mini" type="primary" plain @click="handleDetail(scope.$index, scope.row)">查看</el-button>
+                            <el-button size="mini" type="success" plain @click="handleEdit(scope.$index, scope.row)">发布</el-button>
+                            <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)" :disabled='scope.row.alive===1'>结束
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div class="block" style="width: 100%;text-align: center">
+                    <!-- 分页 -->
+                    <el-pagination  @current-change="handleCurrentChange"
+                                   :current-page="currentPage" :page-size="pageSize"
+                                   layout="total, prev, pager, next, jumper" :total="total">
+                    </el-pagination>
+                </div>
+            </template>
+        </el-container>
+    </div>
+    <div id="after" style="display: none;">
+        <el-container>
+            <el-form ref="form" :model="sizeForm" label-width="100px" size="mini" :rules="rules" style="margin:3% 0 0 3%;">
+         <!--       <el-form-item label="讨论名称" prop="name">
+                    <el-input v-model="sizeForm.name"></el-input>
+                </el-form-item>
+
+                <el-form-item label="讨论主题" prop="theme">
+                    <el-input type="textarea" v-model="sizeForm.theme"></el-input>
+                </el-form-item>-->
+
+                <el-form-item label="讨论名称" prop="name">
+                    <el-row style="margin-bottom: 30px;">
+                        <el-col :span="24" >
+                            <el-input v-model="sizeForm.name" placeholder="请输入讨论名称"></el-input>
+                        </el-col>
+                    </el-row>
+                </el-form-item>
+
+                <el-form-item label="讨论主题" prop="theme">
+
+                    <el-row>
+                        <el-col :span="24" style="margin-bottom: 20px;">
+                            <div id="WangEdite">
+                                <p>请输入讨论内容</p>
+                            </div>
+                        </el-col>
+                    </el-row>
+                </el-form-item>
+
+                <el-form-item label="参与人员" prop="checkedCities">
+                    <template>
+                        <el-checkbox :indeterminate="sizeForm.isIndeterminate" v-model="sizeForm.checkAll"
+                                     @change="handleCheckAllChange">全选
+                        </el-checkbox>
+                        <div style="margin: 15px 0;"></div>
+                        <el-checkbox-group v-model="sizeForm.checkedCities" @change="handleCheckedCitiesChange">
+                            <el-checkbox v-for="city in sizeForm.cities" :label="city.id" :key="city.id">{{city.name}}
+                            </el-checkbox>
+                        </el-checkbox-group>
+                    </template>
+                </el-form-item>
+
+                <el-form-item size="large">
+                    <el-button type="primary" @click="onSubmit">立即创建</el-button>
+                    <el-button type="primary" @click="content">获取内容</el-button>
+                    <el-button @click="quit">取消</el-button>
+                </el-form-item>
+            </el-form>
+        </el-container>
+    </div>
+</div>
+
+</body>
+
+<script>
+    const editor = new window.wangEditor('#WangEdite');
+
+    new Vue({
+        el: '#app',
+        data: function () {
+
+            return {
+                visible: false,
+
+                courseId:"",
+                tableData: [],
+                mainTablekey: 1,
+                currentPage: 1,
+                total: 0,
+                pageSize: 15,
+                select: '',
+                inputCondition: '',
+                sizeForm: {
+                    name: '',
+                    region: '',
+                    theme:'',
+                    delivery: false,
+                    type: [],
+                    resource: '',
+                    desc: '',
+                    checkAll: false,
+                    checkedCities: [],
+                    cities: [],
+                    isIndeterminate: true
+                },
+                rules: {
+                    name: [
+                        {required: true, message: '请输入讨论名称', trigger: 'blur'}
+                    ],
+                    theme: [
+                        {required: true, message: '请输入讨论主题', trigger: 'blur'}
+                    ],
+
+                    checkedCities: [
+                        {type: 'array', required: true, message: '请至少选择一个小组', trigger: 'change'}
+                    ]
+                }
+            }
+        },
+        mounted:function(){
+            editor.create();
+            var that=this;
+            // var editor2 = new E(this.$refs.editor)
+            // editor2.customConfig.onchange = (html) => {
+            //     this.$refs[sizeForm.theme] = html
+            //     this.$refs[sizeForm.theme] = html
+            // }
+            // editor2.create();
+
+        },
+        methods: {
+            content(){
+                this.sizeForm.theme=editor.txt.text();
+                alert(this.sizeForm.theme)
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            conditionSearch() {
+                //刷新表格数据
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/discusses/" + that.courseId + "/0/" + that.currentPage + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+
+            },
+            handleCheckAllChange(val) {
+                if (val === true) {
+                    for (var i = 0; i < this.sizeForm.cities.length; i++) {
+                        this.sizeForm.checkedCities.push(this.sizeForm.cities[i].id);
+                    }
+                } else {
+                    this.sizeForm.checkedCities = [];
+                }
+                this.sizeForm.isIndeterminate = false;
+
+            },
+            handleCheckedCitiesChange(value) {
+                let checkedCount = value.length;
+                this.sizeForm.checkAll = checkedCount === this.sizeForm.cities.length;
+                this.sizeForm.isIndeterminate = checkedCount > 0 && checkedCount < this.sizeForm.cities.length;
+                console.log(this.sizeForm.checkedCities)
+            },
+            handleCurrentChange(val) {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/discusses/" + that.courseId + "/0/" + val + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+            },
+            handleDetail(index, row){
+                window.location.href="/course/talk/detail?courseId="+this.courseId+"&discussId="+row.id;
+            },
+            handleEdit(index, row) {
+                console.log(index, row);
+                if(row.alive==1) {
+                    this.$message({
+                        showClose: true,
+                        message: "该讨论已经结束",
+                        type: 'error'
+                    });
+                }else{
+                    window.open("/course/talk/content?courseId="+this.courseId+"&discussId="+row.id);
+                }
+            },
+            handleDelete(index, row) {
+                console.log(index, row);
+                if(row.alive==1){
+                    this.$message({
+                        showClose: true,
+                        message: "该讨论已经结束",
+                        type: 'error'
+                    });
+                }else {
+                    var that = this;
+                    $.ajax({
+                        type:"delete",
+                        url:"/teacher/discuss/stop",
+                        data:{
+                            courseId:that.courseId,
+                            id:row.id
+                        },
+                        success:function (res) {
+                            that.showMes(res);
+                            that.conditionSearch();
+                        },
+                        error:function (e) {
+                            that.showErr(e);
+                        }
+                    })
+                }
+            },
+            getInfo(){
+                console.log("获取信息");
+            },
+
+            formatter2(row, column) {
+                if (row.alive === 1) {
+                    return "已结束";
+                } else return "正在进行"
+            },
+            formatter3(row, column) {
+                if (row.confirm === 1) {
+                    return "未确认";
+                } else return "已确认"
+            },
+            show(){
+                document.getElementById("before").style.display="none";
+                document.getElementById("after").style.display="block";
+            },
+            onSubmit() {
+                // this.content();
+                // this.sizeForm.theme=editor.txt.html();
+                this.sizeForm.theme=editor.txt.text();
+
+                this.$refs['form'].validate((valid) => {
+                    if (valid) {
+                        document.getElementById("after").style.display="none";
+                        document.getElementById("before").style.display="block";
+                        var that = this;
+                        $.ajax({
+                            type:"post",
+                            url:"/teacher/discuss",
+                            contentType: "application/json;charset=utf-8",
+                            data:JSON.stringify({
+                                courseId:that.courseId,
+                                name:that.sizeForm.name,
+                                discussBody:that.sizeForm.theme,
+                                groupId:that.sizeForm.checkedCities
+                            }),
+                            success:function (res) {
+                                that.showMes(res);
+                                if(res.code==200){
+                                    window.open("/course/talk/content?courseId="+that.courseId+"&discussId="+res.msg);
+                                }
+                            },
+                            error:function (e) {
+                                that.showErr(e);
+                            }
+                        });
+                        window.setTimeout(function () {
+                            window.location.reload(true);
+                        }, 1000)
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+
+            }
+            });
+
+            },
+            quit(){
+                document.getElementById("after").style.display="none";
+                document.getElementById("before").style.display="block";
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            }
+        },
+        created(){
+            this.courseId = this.getQueryString("courseId");
+            var that = this;
+            $.ajax({
+                type:"get",
+                url:"/teacher/discusses/"+that.courseId+"/0/1",
+                data:{
+                    pageSize:10
+                },
+                success:function (res) {
+                    that.tableData = res.list;
+                    that.currentPage = res.pageNum;
+                    that.total = res.total;
+                },
+                error:function (e) {
+                    that.showErr(e);
+                }
+            });
+            $.ajax({
+                type: "get",
+                url: "/teacher/groupsMap/" + that.courseId + "/0",
+                data: {},
+                dataType: "json",
+                success: function (result) {
+                    // that.channels=result;
+                    that.sizeForm.cities = result;
+                },
+                error: function (e) {
+                    that.showErr(e)
+                }
+            });
+        }
+    })
+
+
+</script>
+
+</html>
+

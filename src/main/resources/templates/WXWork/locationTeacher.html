@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师设置位置</title>
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        #nav {
+            margin-left: 2px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<script src="//res.wx.qq.com/open/js/jweixin-1.2.0.js" th:src="@{/static/js/jweixin-1.2.0.js}"></script>
+<body>
+<div id="app">　　
+    <el-container>
+        <el-header><h1>我的位置</h1></el-header>
+        <el-main>
+            <el-row>
+                经度：
+                <el-input
+                        placeholder="经度"
+                        v-model="longitude"
+                        :readonly="true"
+                        style="width: 75%;margin: 5%;">
+                </el-input>
+            </el-row>
+            <el-row>
+                纬度：
+                <el-input
+                        placeholder="纬度"
+                        v-model="latitude"
+                        :readonly="true"
+                        style="width: 75%;margin: 5%;">
+                </el-input>
+            </el-row>
+            <el-row>
+                地址：
+                <el-input
+                        placeholder="我的位置"
+                        v-model="input"
+                        :readonly="true"
+                        style="width: 75%;margin: 5%;">
+                </el-input>
+            </el-row>
+            <el-row>
+                描述：
+                <el-input
+                        placeholder="位置描述"
+                        v-model="describe"
+                        :readonly="true"
+                        style="width: 75%;margin: 5%;">
+                </el-input>
+            </el-row>
+            <div style="text-align: center;margin: 5%;">
+                <el-row>
+                    <el-button type="danger" icon="el-icon-map-location "  @click="open" circle></el-button>
+                    <el-button type="success" @click="relocation">重新定位</el-button>
+                    <el-button type="primary"  style="margin-left: 10%;"  @click="onsubmit">确认定位</el-button>
+                </el-row>
+
+            </div>
+        </el-main>
+    </el-container>
+
+</div>
+</body>
+
+<script type="text/javascript">
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                signId:"",
+                courseId:"",
+                appId: "",
+                timestamp: 0,
+                serverUrl: "",
+                nonceStr: "",
+                signature: "",
+                latitude: 0,
+                longitude: 0,
+                input: '中原工学院',
+                describe: '南校区'
+            }
+        },
+        methods: {
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: "定位失败",
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+
+                this.$message({
+                    showClose: true,
+                    message: "定位成功",
+                    type: 'success'
+                });
+
+            },
+            showMes2(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            open(){
+                this.openLocation();
+            },
+            relocation() {
+                console.log("位置已更新");
+                this.getG();
+            },
+            onsubmit() {
+                console.log("提交");
+                var that = this;
+                $.ajax({
+                    type:"put",
+                    url:"/wxwork/teacher/sign/setLocation",
+                    data:{
+                        signId:that.signId,
+                        courseId:that.courseId,
+                        location:that.input,
+                        info:that.describe,
+                        longitude:that.longitude,
+                        latitude:that.latitude
+                    },
+                    success:function (res) {
+                        that.showMes2(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            checkJsApi(){
+                wx.checkJsApi({
+                    jsApiList: ["getLocation","openLocation"], // 需要检测的JS接口列表，所有JS接口列表见附录2,
+                    success: function(res) {
+                        // 以键值对的形式返回，可用的api值true，不可用为false
+                        // 如：{"checkResult":{"chooseImage":true},"errMsg":"checkJsApi:ok"}
+
+                    }
+                });
+            },
+            init() {
+                var that = this;
+                wx.config({
+                    beta: true,// 必须这么写，否则wx.invoke调用形式的jsapi会有问题
+                    debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+                    appId: that.appId, // 必填，企业微信的corpID
+                    timestamp: that.timestamp, // 必填，生成签名的时间戳
+                    nonceStr: that.nonceStr, // 必填，生成签名的随机串
+                    signature: that.signature,// 必填，签名，见 附录-JS-SDK使用权限签名算法
+                    jsApiList: ["getLocation","openLocation"] // 必填，需要使用的JS接口列表，凡是要调用的接口都需要传进来
+                });
+                wx.ready(function () {
+                    // config信息验证后会执行ready方法，所有接口调用都必须在config接口获得结果之后，config是一个客户端的异步操作，所以如果需要在页面加载时就调用相关接口，则须把相关接口放在ready函数中调用来确保正确执行。对于用户触发时才调用的接口，则可以直接调用，不需要放在ready函数中。
+
+                    that.getG();
+                });
+                wx.error(function (res) {
+                    // config信息验证失败会执行error函数，如签名过期导致验证失败，具体错误信息可以打开config的debug模式查看，也可以在返回的res参数中查看，对于SPA可以在这里更新签名。
+
+                    that.showErr(res);
+                });
+            },
+            getG() {
+                var that = this;
+                wx.getLocation({
+                    type: 'gcj02', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+                    success: function (res) {
+                        that.latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                        that.longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                        var speed = res.speed; // 速度，以米/每秒计
+                        var accuracy = res.accuracy; // 位置精度
+
+                        that.getLocationInfo();
+                    }
+                });
+            },
+            openLocation() {
+                var that = this;
+                wx.openLocation({
+                    latitude: that.latitude, // 纬度，浮点数，范围为90 ~ -90
+                    longitude: that.longitude, // 经度，浮点数，范围为180 ~ -180。
+                    name: that.input, // 位置名
+                    address: that.describe, // 地址详情说明
+                    scale: 28 // 地图缩放级别,整形值,范围从1~28。默认为16
+                });
+
+            },
+            getServerUrl(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/wxwork/serverurl",
+                    async:false,
+                    success:function (res) {
+                        that.serverUrl = res;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            getLocationInfo() {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/wxwork/location/info",
+                    data: {
+                        lat: that.latitude,
+                        lon: that.longitude,
+                        poi: 0
+                    },
+                    success: function (res) {
+                        var json = JSON.parse(res);
+                        if (json.status == 0) {
+                            that.showMes(1);
+                            that.input = json.result.address;
+                            that.describe = json.result.formatted_addresses.recommend;
+                        } else {
+                            alert(4);
+                            that.showErr(1);
+                        }
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                })
+            }
+        },
+        created() {
+            var that = this;
+            this.signId=this.getQueryString("signId");
+            this.courseId = this.getQueryString("courseId");
+            this.getServerUrl();
+            $.ajax({
+                type: "get",
+                url: "/wxwork/authorize/wxconfig",
+                async: false,
+                data: {
+                    // url: "http://3478a54j14.qicp.vip/wxwork/teacher/location?signId="+that.signId+"&courseId="+that.courseId
+                    url: that.serverUrl+"/wxwork/teacher/location?signId="+that.signId+"&courseId="+that.courseId
+                },
+                success: function (res) {
+                    that.appId = res.appId;
+                    that.timestamp = res.timestamp;
+                    that.nonceStr = res.nonceStr;
+                    that.signature = res.signature;
+
+                },
+                error: function (e) {
+                    that.showErr(e);
+                }
+            });
+            this.init();
+        }
+    });
+
+</script>
+</html>

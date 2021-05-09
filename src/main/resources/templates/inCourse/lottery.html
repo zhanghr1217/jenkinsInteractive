@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+
+        .slider {
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+    <el-container>
+        <el-header>
+        <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+            <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                <el-option label="姓名" value="studentName"></el-option>
+                <el-option label="学号" value="studentId"></el-option>
+                <el-option label="专业" value="majorName"></el-option>
+                <el-option label="班级" value="className"></el-option>
+                <el-option label="院系" value="instituteName"></el-option>
+                <el-option label="时间" value="createDate"></el-option>
+            </el-select>
+            <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+        </el-input>
+        <div style="width: 15%;float: right;">
+            <el-button @click="openform">开始抽人</el-button>
+        </div>
+        </el-header>
+        <el-main>
+        <template>
+            <el-table ref="multipleTable" :data="tableData" tooltip-effect="dark" style="width: 100%"
+                      max-height="450"
+                      :key="mainTablekey">
+
+
+                <!--<el-table-column label="添加时间" width="120">-->
+                <!--<template slot-scope="scope">{{ scope.row.date }}</template>-->
+                <!--</el-table-column>-->
+                <el-table-column prop="createDate" fixed label="日期" width="180">
+                </el-table-column>
+
+                <el-table-column prop="student.id" label="学号" width="120">
+                </el-table-column>
+
+                <el-table-column prop="student.name" label="姓名" width="120">
+                </el-table-column>
+
+                <el-table-column :formatter="formatter" prop="student.gender" label="性别" width="120">
+                </el-table-column>
+
+                <el-table-column prop="student.institute" label="院系" width="160">
+                </el-table-column>
+
+                <el-table-column prop="student.major" label="专业" width="160">
+                </el-table-column>
+
+                <el-table-column prop="student.theClass" label="班级" width="120">
+                </el-table-column>
+
+                <el-table-column label="操作" width="280">
+                    <template slot-scope="scope">
+                        <!--<el-button-->
+                        <!--size="mini"-->
+                        <!--@click="handleEdit(scope.$index, scope.row)">详情-->
+                        <!--</el-button>-->
+                        <el-popconfirm
+                                icon="el-icon-info"
+                                icon-color="red"
+                                title="确定删除吗？"
+                                @confirm="handleDelete(scope.$index, scope.row)"
+                        >
+                            <el-button
+                                    size="mini"
+                                    type="danger"
+                                    slot="reference"
+                            >删除
+                            </el-button>
+                        </el-popconfirm>
+                    </template>
+                </el-table-column>
+
+            </el-table>
+            <div class="block" style="width: 100%;text-align: center">
+                <!-- 分页 -->
+                <el-pagination  @current-change="handleCurrentChange"
+                                :current-page="currentPage" :page-size="pageSize"
+                                layout="total, prev, pager, next, jumper" :total="total">
+                </el-pagination>
+            </div>
+            <el-dialog title="选择要抽人的小组" :visible.sync="dialogFormVisible">
+                <el-form ref="form" :model="sizeForm" label-width="80px" size="mini" :rules="rules"
+                         style="margin:3% 0 0 3%;">
+                    <el-form-item label="参与人员" prop="checkedCities">
+                        <template>
+                            <el-checkbox :indeterminate="sizeForm.isIndeterminate" v-model="sizeForm.checkAll"
+                                         @change="handleCheckAllChange">全选
+                            </el-checkbox>
+                            <div style="margin: 15px 0;"></div>
+                            <el-checkbox-group v-model="sizeForm.checkedCities" @change="handleCheckedCitiesChange">
+                                <el-checkbox v-for="city in sizeForm.cities" :label="city.id" :key="city.id">{{city.name}}
+                                </el-checkbox>
+                            </el-checkbox-group>
+                        </template>
+                    </el-form-item>
+                    <el-form-item label="可重复抽">
+                        <el-radio-group v-model="sizeForm.resource" size="medium" style="width: 19rem;">
+                            <el-radio :label="0">是</el-radio>
+                            <el-radio :label="1">否</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="dialogFormVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="beginLottery">确 定</el-button>
+                </div>
+            </el-dialog>
+
+            <!--<div style="margin-top: 20px;text-align: center;">-->
+            <!--<div style="width: 40%;float: left;">-->
+            <!--&lt;!&ndash; 分页 &ndash;&gt;-->
+            <!--<el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"-->
+            <!--:current-page="currentPage4" :page-sizes="[100, 200, 300, 400]" :page-size="100"-->
+            <!--layout="total, sizes, prev, pager, next, jumper" :total="400">-->
+            <!--</el-pagination>-->
+            <!--</div>-->
+
+            <!--</div>-->
+
+        </template>
+        </el-main>
+    </el-container>
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false
+                ,
+                courseId: "",
+                mainTablekey: 1,
+                tableData: [],
+                dialogFormVisible: false,
+                form2: {
+                    name: '',
+                    textarea:''
+                },
+                formLabelWidth: '130px',
+
+                currentPage: 1,
+                total: 0,
+                pageSize: 15,
+                multipleSelection: [],
+                select: '',
+                inputCondition: '',
+
+
+                form: {gid: ''},
+
+                rules:{
+                    gid: [
+                        {required: true, message: '请选择小组', trigger: 'change'}
+                    ]
+                },
+
+               sizeForm:{
+                   checkAll: false,
+                   resource: 0,
+                   checkedCities: [],
+                   cities: [],
+                   isIndeterminate: true
+               },
+
+
+                dialogForm2Visible: false,
+                formLabelWidth: '120px'
+            }
+        },
+        methods: {
+            conditionSearch() {
+                //刷新表格数据
+                var that = this;
+                var id = that.getQueryString("courseId");
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/course/lotteries/" + id + "/0/"+ that.currentPage +"?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+
+            },
+            handleDelete(index, row) {
+                var that = this;
+                console.log(row);
+                $.ajax({
+                    type: "delete",
+                    url: "/teacher/course/lottery/",
+                    async:false,
+                    data: {
+                        courseId:that.courseId,
+                        id:row.id
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        // that.channels=result;
+                        that.showMes(result);
+
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.conditionSearch();
+
+            },
+            openform() {
+                this.dialogFormVisible = true;
+            },
+            handleCurrentChange(val) {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/course/lotteries/" + that.courseId + "/0/" + val + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+            },
+            formatter(row, column) {
+                if(row.student.gender == 1)
+                    return '男';
+                if(row.student.gender == 2)
+                    return '女';
+                else
+                    return '未定义';
+            },
+            handleCheckAllChange(val) {
+                if (val === true) {
+                    for (var i = 0; i < this.sizeForm.cities.length; i++) {
+                        this.sizeForm.checkedCities.push(this.sizeForm.cities[i].id);
+                    }
+                } else {
+                    this.sizeForm.checkedCities = [];
+                }
+                this.sizeForm.isIndeterminate = false;
+
+            },
+            handleCheckedCitiesChange(value) {
+                let checkedCount = value.length;
+                this.sizeForm.checkAll = checkedCount === this.sizeForm.cities.length;
+                this.sizeForm.isIndeterminate = checkedCount > 0 && checkedCount < this.sizeForm.cities.length;
+                console.log(this.sizeForm.checkedCities)
+            },
+
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            beginLottery(){
+                var s = this.sizeForm.checkedCities.join(',');
+               window.open("/course/lottery/content?courseId="+this.courseId+"&groupId="+s+"&type="+this.sizeForm.resource);
+               this.dialogFormVisible = false;
+            },
+
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            }
+
+        },
+        created() {
+            var that = this;
+            var id = that.getQueryString("courseId");
+            that.courseId = id;
+            $.ajax({
+                type: "get",
+                url: "/teacher/course/lotteries/" + id + "/0/1",
+                data: {
+                    pageSize: that.pageSize
+                },
+                dataType: "json",
+                success: function (result) {
+                    console.log(result);
+                    // that.channels=result;
+                    that.tableData = result.list;
+                    that.currentPage = result.pageNum;
+                    that.total = result.total;
+                },
+                error: function (e) {
+                    that.showErr(e)
+                }
+            });
+            $.ajax({
+                type: "get",
+                url: "/teacher/groupsMap/" + id + "/0",
+                data: {},
+                dataType: "json",
+                success: function (result) {
+                    console.log(result);
+                    // that.channels=result;
+                    that.sizeForm.cities = result;
+                },
+                error: function (e) {
+                    that.showErr(e)
+                }
+            });
+        }
+    })
+
+
+</script>
+
+</html>

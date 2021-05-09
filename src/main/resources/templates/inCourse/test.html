@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+
+        }
+
+        body {
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+        .iconSize {
+            margin-left: 1%;
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+
+        .transfer-footer {
+            margin-left: 20px;
+            padding: 6px 5px;
+        }
+        .demo-table-expand {
+            font-size: 0;
+        }
+        .demo-table-expand label {
+            width: 90px;
+            color: #99a9bf;
+        }
+        .demo-table-expand .el-form-item {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 50%;
+        }
+        /*.el-checkbox__input {*/
+            /*display: inline-grid;*/
+            /*white-space: pre-line;*/
+            /*word-wrap: break-word;*/
+            /*overflow: hidden;*/
+            /*line-height: 20px;*/
+        /*}*/
+        .el-checkbox, .el-checkbox__input {
+            white-space: normal;
+            word-break: break-all;
+        }
+
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+    <div id="before" style="display: block;height: 100%;
+            width: 100%;">
+        <el-container>
+            <el-header>
+                <div class="iconSize">
+                    <el-button type="primary" icon="el-icon-circle-plus-outline"   @click="show">新建试题</el-button>
+                </div>
+<!--                <div class="iconSize">-->
+<!--                    <el-button type="primary" icon="el-icon-circle-plus-outline"   @click="show">导入试题</el-button>-->
+<!--                </div>-->
+            </el-header>　
+            <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+                <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                    <el-option label="标题" value="testName"></el-option>
+                    <el-option label="时间" value="date"></el-option>
+                    <el-option label="分数" value="score"></el-option>
+                </el-select>
+                <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+            </el-input>
+            <template>
+                <el-table :data="tableData2" max-height="450" style="width: 100%">
+                    <el-table-column label="试卷名称" fixed width="180">
+                        <template slot-scope="scope">
+                            <span >{{ scope.row.name }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="创建日期"  width="180">
+                        <template slot-scope="scope">
+                            <i class="el-icon-time"></i>
+                            <span >{{ scope.row.createDate }}</span>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column label="试卷分数" width="180">
+                        <template slot-scope="scope">
+                            <span >{{ scope.row.score }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="280">
+                        <template slot-scope="scope">
+                            <el-button size="mini" type="primary" plain @click="handleEdit(scope.$index, scope.row)">查看</el-button>
+                            <el-popconfirm
+                                    icon="el-icon-info"
+                                    icon-color="red"
+                                    title="确定删除吗？"
+                                    @confirm="handleDelete(scope.$index, scope.row)"
+                            >
+                                <el-button
+                                        size="mini"
+                                        type="danger"
+                                        plain
+                                        slot="reference"
+                                >删除
+                                </el-button>
+                            </el-popconfirm>
+                            <el-button size="mini" type="success" plain @click="handleSubmit(scope.$index, scope.row)">发布</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div class="block" style="width: 100%;text-align: center">
+                    <!-- 分页 -->
+                    <el-pagination  @current-change="handleCurrentChange"
+                                   :current-page="currentPage" :page-size="pageSize"
+                                   layout="total, prev, pager, next, jumper" :total="total">
+                    </el-pagination>
+                </div>
+                <el-dialog title="选择要分配的班级" :visible.sync="dialogFormVisible">
+                    <el-form ref="form" :model="form" label-width="80px" size="mini" :rules="rules3"
+                             style="margin:3% 0 0 3%;">
+                        <el-form-item label="测试名称" prop="name">
+                            <el-input v-model="form.name"></el-input>
+                        </el-form-item>
+
+
+
+
+                        <el-form-item  label="测试限时" prop="time">
+                            <el-input v-model.number="form.time" placeholder="请输入数字，单位为秒（0为无限制）"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="参与人员" prop="checkedCities">
+                            <template>
+                                <el-checkbox :indeterminate="form.isIndeterminate" v-model="form.checkAll"
+                                             @change="handleCheckAllChange">全选
+                                </el-checkbox>
+                                <div style="margin: 15px 0;"></div>
+                                <el-checkbox-group v-model="form.checkedCities" @change="handleCheckedCitiesChange">
+                                    <el-checkbox v-for="city in form.cities" :label="city.id" :key="city.id">{{city.name}}
+                                    </el-checkbox>
+                                </el-checkbox-group>
+                            </template>
+                        </el-form-item>
+                        <el-form-item label="是否立即发送推送">
+                            <el-radio-group v-model="form.submitType" size="medium" style="width: 17rem;" @change="submitTypeChange">
+                                <el-radio :label="0">是</el-radio>
+                                <el-radio :label="1">否</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item label="选择发布推送时间"  id="sTime" style="display: none">
+
+                            <el-date-picker
+                                    v-model="form.submitTime"
+                                    type="datetime"
+                                    placeholder="选择日期时间"
+                                    align="right"
+                                    value-format="yyyy-MM-dd HH:mm:ss"
+                                    :picker-options="pickerOptions"
+                                    style="width: 17rem;"
+                            >
+                            </el-date-picker>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="startQuestion">确 定</el-button>
+                    </div>
+                </el-dialog>
+            </template>
+        </el-container>
+
+
+
+        <el-dialog title="请选择题库" :visible.sync="questionFormVisible">
+            <el-form :model="form2" ref="form2" :rules="rules2">
+                <el-form-item label="题库" :label-width="formLabelWidth" prop="id">
+                    <el-select v-model="form2.id" placeholder="请选择">
+                        <el-option
+                                v-for="item in questions"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+
+
+
+            </el-form>
+
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="newQuestionList">确 定</el-button>
+            </div>
+        </el-dialog>
+
+
+    </div>
+    <div id="after" style="display: none;height: 100%;
+            width: 100%;">
+        <el-container>
+            <el-header>
+                <el-row>
+                </el-row>
+                <el-row>
+                    <el-button type="primary" @click="quit">取消</el-button>
+                    <el-button type="warning" @click="preview">预览</el-button>
+                    <el-button type="success" @click="create">创建</el-button>
+                </el-row>
+            </el-header>
+            <el-main style="height:450px">
+                <el-collapse v-model="activeNames" @change="handleChange">
+                    <div v-for="(item,index) in tableData" :key="item.id" >
+                        <el-collapse-item  :title=item.name+':'+item.title :name=item.id  >
+                            <el-table :data=item.questions style="width: 100%"  :key="mainTablekey">
+                                <el-table-column type="expand">
+                                    <template slot-scope="scope">
+                                        <el-form label-position="left" inline class="demo-table-expand">
+                                            <el-form-item label="题目名称">
+                                                <span>{{ scope.row.name }}</span>
+                                            </el-form-item>
+                                            <el-form-item label="题目内容">
+                                                <span>{{ scope.row.question }}</span>
+                                            </el-form-item>
+                                            <el-form-item label="选项">
+
+                                                <div v-for="(g,index) in scope.row.answerBeans" :key="index">
+                                                    <span>{{g.key}}.{{g.value}}</span>
+                                                </div>
+                                            </el-form-item>
+
+
+                                            <el-form-item  label="正确答案">
+                                                <div v-for="(g,index) in scope.row.realBeans" :key="index" style="display: inline-block">
+                                                    <span>{{g}}</span>
+                                                </div>
+                                            </el-form-item>
+                                        </el-form>
+
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="创建日期" width="180">
+                                    <template slot-scope="scope">
+                                        <i class="el-icon-time"></i>
+                                        <span>{{scope.row.createDate}}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="题目名称" width="180">
+                                    <template slot-scope="scope">
+                                        <span>{{ scope.row.name }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="题目分值" width="180">
+                                    <template slot-scope="scope">
+                                        <span>{{ scope.row.score }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="操作">
+                                    <template slot-scope="scope">
+                                        <el-button size="mini" type="success" @click="handleAdd(scope.$index, scope.row)">添加</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-collapse-item>
+                    </div>
+                </el-collapse>
+
+            </el-main>
+            <el-footer>
+                <el-row>
+                    已选择：
+                    <el-tag
+                            :key="tag"
+                            v-for="tag in dynamicTags"
+                            closable
+                            :disable-transitions="false"
+                            @close="handleClose(tag)">
+                        {{tag.name}}
+                    </el-tag>
+                </el-row>
+
+            </el-footer>
+            <el-drawer
+                    title="我是标题"
+                    v-if="drawer"
+                    :visible.sync="drawer"
+                    size="50%"
+                    :with-header="false">
+                <!--<iframe src="/course/test/content" style="width: 100%;height: 90%;"></iframe>-->
+                <div style=" height: 100%;
+            width: 100%;"> 　
+                    <el-container style="background-color:#f4f4f5;">
+                        <template>
+                            <el-row :gutter="20" style="overflow-y: auto;height: 700px">
+                                <!-- 签到学生 -->
+                                <el-col :span="15" :offset="5" style="background-color:#ffffff;">
+                                    <h4 style="text-align: center;">测试</h4>
+                                </el-col>
+                                <el-col :span="15" :offset="5" style="background-color: #ffffff;">
+                                    <template>
+                                        <div v-for="(item,index) in data">
+                                            <el-row style="border: 1px solid #aaaaaa;margin-bottom: 40px;">
+                                                <el-col style="height: 65px;line-height: 60px;border-bottom: 1px solid #aaaaaa;background-color: #f5f5f5;vertical-align: middle;padding: 5px 15px 0px 15px;">
+                                                    题目{{index+1}}<span v-if="item.type == '2'">(多选)</span> <span v-if="item.type == '0'">(投票 最多选{{item.maxNum}}项)</span> <span style="float: right;"> {{item.score}}分</span>
+                                                </el-col>
+                                                <el-container style="padding: 10px 10px 20px 10px;">
+                                                    <el-row>
+                                                        <el-col style="padding: 25px 5px 25px 20px;border-bottom: 1px solid #dddddd;white-space: pre-wrap;">{{item.question}}</el-col>
+                                                        <template v-if="item.type == '2'">
+                                                            <el-checkbox-group  v-model="realAnswer[index].realAnswer">
+                                                                <el-col v-for="(g,index1) in item.answer">
+                                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-checkbox :label="g.key"  style=" ">{{g.key}}.{{g.value}}</el-checkbox></el-row>
+                                                                </el-col>
+                                                            </el-checkbox-group>
+                                                        </template>
+
+                                                        <template  v-else-if="item.type == '1'">
+                                                            <el-radio-group v-model="realAnswer[index].realAnswer[0]">
+
+                                                                <el-col v-for="g in item.answer">
+                                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-radio :label="g.key" style="  width: 100% ; text-overflow: ellipsis; white-space: normal;line-height: 18px;">{{g.key}}.{{g.value}}</el-radio></el-row>
+                                                                </el-col>
+
+                                                            </el-radio-group>
+                                                        </template>
+
+                                                        <template v-else>
+                                                            <el-checkbox-group  v-model="realAnswer[index].realAnswer" :max=item.maxNum>
+                                                                <el-col v-for="(g,index1) in item.answer">
+                                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-checkbox :label="g.key"  style=" ">{{g.key}}.{{g.value}}</el-checkbox></el-row>
+                                                                </el-col>
+                                                            </el-checkbox-group>
+                                                        </template>
+
+                                                    </el-row>
+                                                </el-container>
+                                            </el-row>
+                                        </div>
+                                    </template>
+                                </el-col>
+
+                            </el-row>
+
+
+
+                            </el-row>
+                        </template>
+                    </el-container>
+                </div>
+            </el-drawer>
+
+        </el-container>
+    </div>
+    <el-dialog title="" :visible.sync="testCreatFormVisible">
+        <el-form :model="formTest" ref="formTest" :rules="rules">
+            <el-form-item label="试卷名称" :label-width="formLabelWidth" prop="name">
+                <el-input v-model="formTest.name" autocomplete="off"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="testCreatFormVisible = false">取 消</el-button>
+            <el-button type="primary" @click="createTest">确 定</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+
+
+</body>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                vote: false,
+                drawer: false,
+                dynamicTags: [],
+                courseId:"",
+                activeNames: "",
+                mainTablekey:0,
+                submitTestId:"",
+                visible: false,
+                currentPage: 1,
+                total: 0,
+                pageSize: 15,
+                rules:{
+                    name: [
+                        {required: true, message: '请输入试卷名称', trigger: 'blur'},
+                    ]
+                },
+                rules2:{
+                    id: [
+                        {required: true, message: '请选择题库', trigger: 'change'}
+                    ]
+                },
+                rules3:{
+                    name: [
+                        {required: true, message: '请输入测试名称', trigger: 'blur'}
+                    ],
+
+
+                    checkedCities: [
+                        {type: 'array', required: true, message: '请至少选择一个小组', trigger: 'change'}
+                    ],
+                    time: [
+                        {required: true, message: '限时不能为空'},
+                        {type: 'number', message: '限时必须为数字值，单位为秒'}
+                    ]
+
+
+                },
+                select: '',
+                inputCondition: '',
+                // 发布试卷form
+                form: {
+
+                    checkedCities:[],
+                    checkAll: false,
+                    cities: [],
+                    isIndeterminate: true,
+                    name:'',
+                    time:'',
+                    submitType: 0,
+                    submitTime: ''
+                },
+                classes:[
+
+                ],
+
+                formTest:{
+                    name:''
+                },
+                dialogFormVisible: false,
+                testCreatFormVisible: false,
+                formLabelWidth: '120px',
+
+
+                // 新建试卷form
+                form2: {
+                    id:'',
+
+                },
+                questions:[
+
+                ],
+                questionFormVisible:false,
+
+
+                tableData2:[],
+                tableData: [],
+                data:[],
+                realAnswer:[],
+
+                sizeForm: {
+                    name: '',
+                    region: '',
+                    theme:'',
+                    score:'',
+                    domains: [{
+                        value: ''
+                    }],
+
+                    options: [],
+
+
+                    options2: [],
+
+                    checkList: [],
+                },
+
+                multipleSelection: [],
+
+
+                data: this.generateData(),
+                value: [],
+                value4: [1],
+                filterMethod(query, item) {
+                    return item.pinyin.indexOf(query) > -1;
+                }
+
+            }
+        },
+        methods: {
+            handleCheckAllChange(val) {
+                if (val === true) {
+                    for (var i = 0; i < this.form.cities.length; i++) {
+                        this.form.checkedCities.push(this.form.cities[i].id);
+                    }
+                } else {
+                    this.form.checkedCities = [];
+                }
+                this.form.isIndeterminate = false;
+
+            },
+            handleCheckedCitiesChange(value) {
+                let checkedCount = value.length;
+                this.form.checkAll = checkedCount === this.form.cities.length;
+                this.form.isIndeterminate = checkedCount > 0 && checkedCount < this.form.cities.length;
+                console.log(this.form.checkedCities)
+            },
+            submitTypeChange(val){
+                if (val == 1) {
+                    document.getElementById("sTime").style.display = "block";
+                } else {
+                    document.getElementById("sTime").style.display = "none";
+
+                }
+            },
+            preview(){
+                if(this.dynamicTags.length<1){
+                    this.$message({
+                        showClose: true,
+                        message: "参数错误",
+                        type: 'error'
+                    });
+                }else {
+                    var that = this;
+                    var obj = [];
+                    for (var i = 0; i < this.dynamicTags.length; i++) {
+                        obj.push(this.dynamicTags[i].id);
+                    }
+
+                    $.ajax({
+                        type:"post",
+                        url:"/teacher/course/test/preview",
+                        async:false,
+                        contentType: "application/json; charset=utf-8",
+                        data:JSON.stringify({
+
+                            questionIds:obj
+
+                        }),
+                        success:function (res) {
+                            that.data = JSON.parse(res.body);
+                            that.realAnswer = JSON.parse(res.answer);
+                            that.drawer = true;
+                        },
+                        error:function (e) {
+                            that.showErr(e)
+                        }
+
+                    })
+                }
+
+            },
+            conditionSearch() {
+                //刷新表格数据
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url:"/teacher/course/tests/"+that.courseId+"/0/"+ that.currentPage + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData2 = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+
+            },
+            handleCurrentChange(val) {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url:"/teacher/course/tests/"+that.courseId+"/0/"+ that.currentPage + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData2 = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+            },
+            handleClose(tag) {
+                this.dynamicTags.splice(this.dynamicTags.indexOf(tag), 1);
+            },
+            createTest(){
+                this.$refs['formTest'].validate((valid) => {
+                    if(valid) {
+                        this.testCreatFormVisible=false;
+
+                        var that = this;
+                        var obj = [];
+                        for (var i = 0; i < this.dynamicTags.length; i++) {
+                            obj.push(this.dynamicTags[i].id);
+                        }
+
+                        $.ajax({
+                            type:"post",
+                            url:"/teacher/course/test",
+                            async:false,
+                            contentType: "application/json; charset=utf-8",
+                            data:JSON.stringify({
+                                courseId:that.courseId,
+                                questionIds:obj,
+                                name:that.formTest.name
+                            }),
+                            success:function (res) {
+                                that.showMes(res);
+                                document.getElementById("before").style.display="block";
+                                document.getElementById("after").style.display="none";
+                                that.conditionSearch();
+                            },
+                            error:function (e) {
+                                that.showErr(e);
+                            }
+                        })
+                    }else{
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+                    }
+                });
+            },
+
+            create(){
+                if(this.dynamicTags.length<1){
+                    this.$message({
+                        showClose: true,
+                        message: "参数错误",
+                        type: 'error'
+                    });
+                }else {
+                    this.testCreatFormVisible=true;
+                }
+
+
+
+            },
+            handleChange(value, direction, movedKeys) {
+                console.log(value, direction, movedKeys);
+            },
+            generateData(){
+                //    生成题库数据
+                const data = [];
+                for (let i = 1; i <= 15; i++) {
+                    data.push({
+                        key: i,
+                        label: `备选项 ${ i }`,
+                    });
+                }
+                return data;
+
+            },
+
+            handleAdd(index, row) {
+                // 新建试卷方法
+                var obj = {};
+                    obj.id = row.id;
+                    obj.name = row.name;
+                this.dynamicTags.push(obj);
+                console.log(this.dynamicTags)
+            },
+            handleEdit(index, row){
+                window.open("/course/test/content?courseId="+this.courseId+"&testId="+row.id);
+
+            },
+            handleDelete(index, row) {
+                var that = this;
+                $.ajax({
+                    type:"delete",
+                    url:"/teacher/course/test",
+                    data:{
+                        courseId:that.courseId,
+                        testId:row.id
+                    },
+                    success:function (res) {
+                        that.showMes(res);
+                        that.conditionSearch();
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            handleSubmit(index, row){
+                this.dialogFormVisible = true;
+                this.submitTestId = row.id;
+
+            },
+            startQuestion(){
+                var that = this;
+                this.$refs['form'].validate((valid) => {
+                    if(valid) {
+                        $.ajax({
+                            type:"post",
+                            url:"/teacher/course/test/testCourse",
+                            contentType: "application/json; charset=utf-8",
+                            async:false,
+                            data:JSON.stringify({
+                                courseId:that.courseId,
+                                testId:that.submitTestId,
+                                name:that.form.name,
+                                limit:that.form.time,
+                                groupId:that.form.checkedCities,
+                                submitType: that.form.submitType,
+                                submitTime: that.form.submitTime
+                            }),
+                            success:function (res) {
+                                that.showMes(res);
+                                if(res.code==200){
+                                    if(that.form.submitType == 0){
+                                        window.open("/course/test/teacher/content?courseId="+that.courseId+"&testCourseId="+res.msg);
+                                    }
+                                    that.dialogFormVisible = false;
+                                }
+                            },
+                            error:function (e) {
+                                that.showErr(e);
+                            }
+
+                        })
+
+                    }else{
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+                    }
+                })
+
+
+            },
+
+            newQuestionList(){
+                this.$refs['form2'].validate((valid) => {
+                    if(valid) {
+                        this.questionFormVisible=false;
+                        document.getElementById("before").style.display="none";
+                        document.getElementById("after").style.display="block";
+                        this.getLibraryDetail(this.form2.id);
+
+                    }else{
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+            }
+            });
+
+            },
+            getGroup(){
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/groupsMap/" + that.courseId + "/0",
+                    data: {},
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        // that.channels=result;
+                        that.form.cities = result;
+                    },
+                    error: function (e) {
+                        that.showErr(e)
+                    }
+                });
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url:"/teacher/course/tests/"+that.courseId+"/0/1",
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData2 = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+            },
+            removeDomain(item) {
+                var index = this.sizeForm.domains.indexOf(item)
+                if (index !== -1) {
+                    this.sizeForm.domains.splice(index, 1)
+                }
+            },
+
+            addDomain() {
+                this.sizeForm.domains.push({
+                    value: '',
+                    key: Date.now()
+                });
+            },
+
+
+            show(){
+                // document.getElementById("before").style.display="none";
+                this.questionFormVisible=true;
+                // document.getElementById("after").style.display="block";
+            },
+
+            onSubmit() {
+                document.getElementById("after").style.display="none";
+                document.getElementById("before").style.display="block";
+                console.log('submit!');
+            },
+            quit(){
+                document.getElementById("after").style.display="none";
+                document.getElementById("before").style.display="block";
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            getLibrary(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/libraries/0",
+                    data:{},
+                    success:function (res) {
+                        that.questions = res;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            getLibraryDetail(id){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/library/question/"+id+"/0/0",
+                    data:{},
+                    success:function (res) {
+                        that.tableData = res;
+                        // that.sizeForm.options2=[];
+                        // for (var i = 0; i < res.length; i++) {
+                        //     var value = res[i].id;
+                        //     var label = res[i].name;
+                        //     var obj = {};
+                        //     obj.value = value;
+                        //     obj.label = label;
+                        //     that.sizeForm.options2.push(obj);
+                        // }
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.mainTablekey = Math.random();
+            }
+
+        },
+        created(){
+            this.courseId = this.getQueryString("courseId");
+            this.getInfo();
+            this.getLibrary();
+            this.getGroup();
+        }
+    })
+
+
+</script>
+
+</html>

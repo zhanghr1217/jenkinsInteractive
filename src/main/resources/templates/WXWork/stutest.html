@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试</title>
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0%;
+            padding: 0%;
+        }
+
+
+
+        .el-container {
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+
+        }
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+
+
+
+        .el-checkbox, .el-checkbox__input {
+            white-space: normal;
+            word-break: break-all;
+        }
+
+      
+
+
+    
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+    <div id="app"> 　
+        <el-container>
+            <el-header style="height: 100px;background-color:#ffffff">
+                <h4 style="text-align: center;">{{testName}}</h4>
+                <h4 style="text-align: center;">限时：{{limitTime}}秒</h4>
+            </el-header>
+            <el-main>
+                    <el-row :gutter="24" style="height: 100%">
+                    <!-- 签到学生 -->
+
+                        <el-col :span="24"  style="background-color: #ffffff;height: 100%;overflow-y: auto;">
+                        <template>
+                                 <div v-for="(item,index) in data">
+                                     <el-row style="border: 1px solid #aaaaaa;margin-bottom: 40px;">
+                                        <el-col style="height: 65px;line-height: 60px;border-bottom: 1px solid #aaaaaa;background-color: #f5f5f5;vertical-align: middle;padding: 5px 15px 0px 15px;">
+                                            题目{{index+1}}<span v-if="item.type == '2'">(多选)</span><span v-if="item.type == '0'">(投票 最多选{{item.maxNum}}项)</span>  <span style="float: right;"> {{item.score}}分</span>
+                                        </el-col>
+                                            <el-container style="padding: 10px 10px 20px 10px;">
+                                                <el-row>
+                                                    <el-col style="padding: 25px 5px 25px 20px;border-bottom: 1px solid #dddddd; white-space: pre-wrap;">{{item.question}}</el-col>
+                                                    <template v-if="item.type == '2'">
+                                                        <el-checkbox-group v-model="realAnswer[index].realAnswer">
+                                                            <el-col v-for="(g,index1) in item.answer">
+                                                                <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-checkbox :label="g.key" :disabled="isAnswer">{{g.key}}.{{g.value}}</el-checkbox></el-row>
+                                                            </el-col>
+                                                        </el-checkbox-group>
+                                                        <el-col v-if="isOut">正确答案：{{realAnswer2[index].realAnswer}}</el-col>
+                                                    </template>
+                                                
+                                                     <template  v-else-if="item.type == '1'">
+                                                        <el-radio-group v-model="realAnswer[index].realAnswer[0]">
+
+                                                            <el-col v-for="g in item.answer">
+                                                                <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-radio :label="g.key" style="  width: 100% ; text-overflow: ellipsis; white-space: normal;line-height: 18px;" :disabled="isAnswer">{{g.key}}.{{g.value}}</el-radio></el-row>
+                                                            </el-col>
+                                                          
+                                                        </el-radio-group>
+                                                         <el-col v-if="isOut">正确答案：{{realAnswer2[index].realAnswer}}</el-col>
+                                                      </template>
+
+                                                    <template v-else>
+                                                        <el-checkbox-group v-model="realAnswer[index].realAnswer" :max="item.maxNum">
+                                                            <el-col v-for="(g,index1) in item.answer">
+                                                                <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-checkbox :label="g.key" :disabled="isAnswer">{{g.key}}.{{g.value}}</el-checkbox></el-row>
+                                                            </el-col>
+                                                        </el-checkbox-group>
+                                                        <el-col v-if="isOut">正确答案：{{realAnswer2[index].realAnswer}}</el-col>
+                                                    </template>
+
+                                                </el-row>
+                                            </el-container>
+                                     </el-row>
+                                </div>
+                            <div style="width: 100%;text-align: center">
+                                <el-button type="success" @click="submit">提交试卷</el-button>
+                            </div>
+
+                        </template>
+                    </el-col>
+
+                </el-row>
+
+            </el-main>
+        </el-container>
+    </div>
+
+</body>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                checkList: ['A'],
+                radio: 3,
+                testCourseId:"",
+                courseId:"",
+                testName:"",
+                limitTime:"",
+                isOut:false,
+                isAnswer:false,
+                data:[],
+                realAnswer:[],
+                realAnswer2:[]
+
+            }
+        },
+        methods: {
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/wxwork/student/test/testCourse/"+that.courseId+"/"+that.testCourseId+"/0",
+                    data:{},
+                    success:function (res) {
+                        that.data = JSON.parse(res.testBody);
+
+                        that.testName = res.name;
+                        if(res.limitTime == 0){
+                            that.limitTime = '无限制';
+                        }else {
+                            that.limitTime = res.limitTime;
+                        }
+                        that.realAnswer2 = JSON.parse(res.testAnswer);
+                        for (var i = 0; i < that.realAnswer2.length; i++) {
+                            var obj = {};
+                            obj.realAnswer = [];
+                            that.realAnswer.push(obj);
+                        }
+                        console.log(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            getTestStudent(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    async:false,
+                    url:"/wxwork/student/test/testStudent/"+that.testCourseId,
+                    data:{},
+                    success:function (res) {
+                        that.$message({
+                            showClose: true,
+                            message: "得分："+res.score,
+                            type: 'success'
+                        });
+                        that.realAnswer = JSON.parse(res.answer);
+
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            isAlive(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/wxwork/student/test/testCourse/isAlive/"+that.testCourseId,
+                    data:{},
+                    success:function (res) {
+                        if(res == true){
+
+                        }else {
+                            that.$message({
+                                showClose: true,
+                                message: "考试已经结束",
+                                type: 'success'
+                            });
+                            that.isOut = true;
+                        }
+
+                    }
+                })
+            },
+            isAnswers(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/wxwork/student/test/testCourse/isAnswer/"+that.testCourseId,
+                    data:{},
+                    success:function (res) {
+                        if(res == true){
+
+                        }else {
+                            that.getTestStudent();
+                            that.isAnswer = true;
+                        }
+
+                    }
+                })
+            },
+            submit(){
+                var that = this;
+                $.ajax({
+                    type:"put",
+                    url:"/wxwork/student/test/testCourse",
+                    contentType: "application/json; charset=utf-8",
+                    data:JSON.stringify({
+                        testCourseId:that.testCourseId,
+                        answer:that.realAnswer,
+                        courseId:that.courseId
+                    }),
+                    success:function (res) {
+                        that.showMes(res);
+                        if(res.code == 200){
+                            window.close();
+                        }
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            }
+        },
+        created() {
+            this.testCourseId = this.getQueryString("testCourseId");
+            this.courseId = this.getQueryString("courseId");
+            this.getInfo();
+            this.isAlive();
+            this.isAnswers();
+
+        }
+    })
+
+
+</script>
+
+</html>

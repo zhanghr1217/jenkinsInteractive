@@ -1,0 +1,120 @@
+
+spring:
+  profiles:
+    active: dev
+
+---
+server:
+  port: 8080
+
+wxconf:
+  CORP_ID: ww0b90c46179509885
+  CORP_SECRET: lwoohGPhNd0WSgwmNURqJvJLk3cX0vWm2DihGat6Yzg
+  CORP_SECRET_STU: 7GQLBcEp2mz5Ru_rDgUpkZmz8gg8UlqUqZpt-tC6F88
+  GAODE_KEY: L2UBZ-6ZHEW-Q6MRO-O5Q45-LDWLZ-LVF7K
+  AGENT_ID: 1000002
+  AGENT_ID_STU: 1000004
+  GET_ACCESS_TOKEN_URI: https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={1}&corpsecret={2}
+  GET_USER_ID_URI: https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token={1}&code={2}
+  GET_USERINFOR_BY_USERID_URI: https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token={1}&userid={2}
+  SEND_MESSAGE_URI: https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={1}
+  GET_JSAPI_TICKET: https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token={1}
+  GET_LOCATION_INFO: https://apis.map.qq.com/ws/geocoder/v1/?location={1}&key={2}&get_poi={3}
+  URL: http://3478a54j14.qicp.vip
+  uploadImagesPath: D:/upload/images
+  uploadImagesPathMap: http://3478a54j14.qicp.vip/upload/images
+
+spring.datasource:
+  driver-class-name: com.mysql.cj.jdbc.Driver
+  url: jdbc:mysql://localhost:3306/tool?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+  username: root
+  password: 123456
+  #spring.datasource.password=Zzti123!
+
+mybatis:
+  mapperLocations: classpath:mapper/*.xml
+  type-aliases-package: com.zut.interactivetools.bean
+  configuration.map-underscore-to-camel-case: true
+
+logging:
+  level.com.zut.interactivetools: debug
+  #  在控制台输出的日志的格式
+  pattern.console: '%d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n'
+
+spring.jackson.date-format: yyyy-MM-dd HH:mm:ss
+spring.jackson.time-zone: Asia/Shanghai
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+---
+server:
+  port: 80
+wxconf:
+  CORP_ID: ww0b90c46179509885
+  CORP_SECRET: lwoohGPhNd0WSgwmNURqJvJLk3cX0vWm2DihGat6Yzg
+  CORP_SECRET_STU: 7GQLBcEp2mz5Ru_rDgUpkZmz8gg8UlqUqZpt-tC6F88
+  GAODE_KEY: L2UBZ-6ZHEW-Q6MRO-O5Q45-LDWLZ-LVF7K
+  AGENT_ID: 1000002
+  AGENT_ID_STU: 1000004
+  GET_ACCESS_TOKEN_URI: https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={1}&corpsecret={2}
+  GET_USER_ID_URI: https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token={1}&code={2}
+  GET_USERINFOR_BY_USERID_URI: https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token={1}&userid={2}
+  SEND_MESSAGE_URI: https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={1}
+  GET_JSAPI_TICKET: https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token={1}
+  GET_LOCATION_INFO: https://apis.map.qq.com/ws/geocoder/v1/?location={1}&key={2}&get_poi={3}
+  URL: http://www.zzti.site
+  uploadImagesPath: /usr/local/upload/images
+  uploadImagesPathMap: http://www.zzti.site/upload/images
+
+spring.datasource:
+  driver-class-name: com.mysql.cj.jdbc.Driver
+  url: jdbc:mysql://localhost:3306/tool?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+  username: root
+  password: Zzti123!
+  #spring.datasource.password=Zzti123!
+
+mybatis:
+  mapperLocations: classpath:mapper/*.xml
+  type-aliases-package: com.zut.interactivetools.bean
+  configuration.map-underscore-to-camel-case: true
+
+logging:
+  level.com.zut.interactivetools: info
+  #  在控制台输出的日志的格式
+  pattern.console: '%d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n'
+
+spring.jackson.date-format: yyyy-MM-dd HH:mm:ss
+spring.jackson.time-zone: Asia/Shanghai
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+
+spring:
+  config:
+    activate:
+      on-profile: aliyun
+
+---
+spring:
+  redis:
+    database: 0
+    host: 39.97.106.8
+    port: 6379
+    password: Zzti123!
+    timeout: 5000
+    jedis:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0

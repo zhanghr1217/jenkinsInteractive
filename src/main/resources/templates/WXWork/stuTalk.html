@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>讨论</title>
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0%;
+            padding: 0%;
+        }
+
+
+
+        .el-container {
+            width: 100%;
+            height: 100%;
+
+        }
+        .el-main{
+            width: 100%;
+        }
+        .el-row {
+            width: 100%;
+        }
+
+        .imgsty {
+            height: 600px;
+            margin-top: 5%;
+        }
+
+        /* 以下为气泡样式 */
+
+
+
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app"> 　
+
+    <el-container >
+        <el-header style="text-align: center;color: rgb(49, 184, 252);"><h4>"讨论主题：{{discuss.discussBody}}"</h4></el-header>
+        <el-main>
+            <template>
+                <el-row :gutter="24"  v-for="item in discussBody" >
+                    <!-- 签到学生 -->
+
+                    <el-col :span="24"    style="border: 1px solid #e3e5e5;background-color: #f5f5f5;margin-left: 4%" >
+
+                            <el-col :span="6" style="height: 100%;background-color: #f5f5f5">
+                                <div style="margin-top: 35%;"><el-avatar shape="square" :size="50" src="images/cat.png" :src="head"></el-avatar></div>
+                                <p style="font-size: 13px">{{name}}</p>
+                            </el-col>
+                            <el-col :span="18" style="background-color: white;">
+                                    <span style="font-size:15px;width:100%;word-break:normal;display:block;overflow-wrap: break-word;margin:25px 0px 47px;height: 90px;">
+                                       {{item.body}}
+                                    </span>
+                            </el-col>
+                    </el-col>
+
+                </el-row>
+
+            </template>
+        </el-main>
+        <footer >
+            <template>
+                <el-row :gutter="24">
+                    <el-col :span="24" >
+                        <div style="width: 80%;float: left;padding-left: 3%;padding-bottom: 4%;">
+
+                            <el-input
+                                    size="large"
+                                    type="textarea"
+                                    :autosize="{ minRows: 0, maxRows: 2}"
+                                    placeholder="请输入内容"
+                                    v-model="textarea1">
+                            </el-input>
+                        </div>
+                        <el-button type="success" size="small" style="float: left;" @click="submit">发送</el-button>
+                    </el-col>
+                </el-row>
+            </template>
+        </footer>
+
+    </el-container>
+
+
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                discussId: "",
+                activeName: 'first',
+                textarea1: '',
+                name: "",
+                head: "",
+                discuss:{},
+                discussBody: []
+            }
+        },
+        methods: {
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getInfo() {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/wxwork/student/discussBody/" + that.discussId + "/0",
+                    data: {},
+                    success: function (res) {
+                        that.discussBody = res;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            getTheme(){
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/wxwork/student/discuss/theme/"+that.discussId,
+                    data: {},
+                    success: function (res) {
+                        that.name = res.name;
+                        that.head = res.head;
+                        that.discuss = res.discuss;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            submit() {
+                var that = this;
+                $.ajax({
+                    type: "put",
+                    url: "/wxwork/student/discussBody",
+                    data: {
+                        discussId: that.discussId,
+                        discussBody: that.textarea1
+                    },
+                    success: function (res) {
+
+                        that.showMes(res);
+                        that.textarea1 = "";
+                        that.getInfo();
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+            }
+        },
+
+            created() {
+
+                this.discussId = this.getQueryString("discussId");
+                this.getTheme();
+                this.getInfo();
+
+            }
+
+        }
+    )
+
+
+</script>
+
+</html>
+

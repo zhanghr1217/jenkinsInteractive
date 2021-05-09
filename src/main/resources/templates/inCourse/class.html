@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+    <el-container>
+        <el-header>
+            <div class="iconSize">
+                <i class="el-icon-circle-plus-outline" @click="dialogFormVisible = true">新建班级</i>
+            </div>
+        </el-header>
+        <template>
+            <!-- 签到列表 -->
+            <el-table :data="tableData" style="width: 100%"  max-height="550">
+                <el-table-column label="创建日期" fixed width="180">
+                    <template slot-scope="scope">
+                        <i class="el-icon-time"></i>
+                        <span>{{ scope.row.createDate }}</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="班级名称" width="160">
+                    <template slot-scope="scope">
+
+                        <div slot="reference" class="name-wrapper">
+                            <el-tag size="medium">{{ scope.row.name }}</el-tag>
+                        </div>
+
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="班级人数" width="140">
+                    <template slot-scope="scope">
+                        <i class="el-icon-time"></i>
+                        <span>{{ scope.row.sum }}</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="课程" width="160">
+                    <template slot-scope="scope">
+                        <span>{{ scope.row.course.name}}</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="学期" width="160">
+                    <template slot-scope="scope">
+                        <span>{{ scope.row.term.name}}</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="教师" width="140">
+                    <template slot-scope="scope">
+                        <span>{{ scope.row.teacher.name}}</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="操作">
+                    <template slot-scope="scope">
+                        <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">查看</el-button>
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <!--<div class="block">-->
+            <!--&lt;!&ndash; 分页 &ndash;&gt;-->
+            <!--<el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"-->
+            <!--:current-page="currentPage4" :page-sizes="[100, 200, 300, 400]" :page-size="100"-->
+            <!--layout="total, sizes, prev, pager, next, jumper" :total="400">-->
+            <!--</el-pagination>-->
+            <!--</div>-->
+        </template>
+        <el-dialog title="新建班级" :visible.sync="dialogFormVisible">
+            <el-form :model="form" ref="form" :rules="rules">
+                <el-form-item label="班级名称" :label-width="formLabelWidth" prop="name">
+                    <el-input v-model="form.name" autocomplete="off"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="createGroup">确 定</el-button>
+            </div>
+        </el-dialog>
+    </el-container>
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            var checkName = (rule, value, callback) =>{
+                if (!value) {
+                    return callback(new Error('小组名不能为空'));
+                } else if (value.match(/^[\u4e00-\u9fa5_a-zA-Z0-9]+$/) == null) {
+                    return callback(new Error('非法字符串'));
+                }else {
+                    callback();
+                }
+            };
+            return {
+                visible: false
+                ,
+                dialogFormVisible: false,
+                form: {
+                    name: ''
+                },
+                rules: {
+                    name: [
+                        {validator: checkName, trigger: 'blur'}
+                    ]
+                },
+                formLabelWidth: '120px',
+                tableData: [],
+                courseId: ""
+            }
+        },
+        methods: {
+            handleEdit(index, row) {
+                console.log(index, row);
+                window.location.href = "/course/class/detail?courseId=" + this.courseId + "&groupId=" + row.id;
+            },
+            handleDelete(index, row) {
+                console.log(index, row);
+                var that = this;
+                $.ajax({
+                    type: "delete",
+                    url: "/teacher/group/",
+                    async: false,
+                    data: {
+                        groupId: row.id,
+                        courseId: that.courseId
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.showMes(result);
+                    },
+                    error: function (e) {
+                        that.showErr(e)
+                    }
+                });
+                window.setTimeout(function () {
+                    window.location.reload(true);
+                }, 2000)
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                    console.log(response.code)
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            // handleSizeChange(val) {
+            //     console.log(`每页 ${val} 条`);
+            // },
+            // handleCurrentChange(val) {
+            //     console.log(`当前页: ${val}`);
+            // }
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            createGroup() {
+                this.$refs['form'].validate((valid) => {
+                    if(valid) {
+                        this.dialogFormVisible = false;
+                        var that = this;
+                        $.ajax({
+                            type: "post",
+                            url: "/teacher/group/",
+                            async: false,
+                            data: {
+                                name: that.form.name,
+                                courseId: that.courseId
+                            },
+                            dataType: "json",
+                            success: function (result) {
+                                console.log(result);
+                                // that.channels=result;
+                                that.showMes(result);
+                                console.log(result.code);
+                            },
+                            error: function (e) {
+                                that.showErr(e)
+                            }
+                        });
+                        window.setTimeout(function () {
+                            window.location.reload(true);
+                        }, 1000)
+
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+
+            }
+            })
+
+            }
+
+
+        },
+        created() {
+            var that = this;
+            var id = that.getQueryString("courseId");
+            this.courseId = id;
+            $.ajax({
+                type: "get",
+                url: "/teacher/groups/" + id + "/0",
+                data: {},
+                dataType: "json",
+                success: function (result) {
+                    console.log(result);
+                    // that.channels=result;
+                    that.tableData = result;
+                },
+                error: function (e) {
+                    that.showErr(e);
+                }
+            });
+        }
+    })
+
+
+</script>
+
+</html>

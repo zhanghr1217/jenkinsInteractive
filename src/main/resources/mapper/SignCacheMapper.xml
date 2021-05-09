@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.SignCacheDao">
+    <insert id="addSignCache">
+        insert into sign_cache(id,taskTimestamp,taskEnum,needSendUser,teacherId,courseId,courseNum,teacherName,courseName,status)
+        values (#{id},#{taskTimestamp},#{taskEnum},#{needSendUser},#{teacherId},#{courseId},#{courseNum},#{teacherName},#{courseName},0)
+    </insert>
+    <select id="getSignCachesByTeacher" resultType="SubmitTaskBean">
+        select id,taskTimestamp,taskEnum,needSendUser,teacherId,courseId,courseNum from sign_cache
+        where teacherId = #{teacherId} and courseId = #{courseId} and status = 0
+    </select>
+    <select id="getSignCacheById" resultType="SubmitTaskBean">
+        select id,taskTimestamp,taskEnum,needSendUser,teacherId,courseId,courseNum,teacherName,courseName from sign_cache
+        where id = #{id} and teacherId = #{teacherId} and courseId = #{courseId} and status = 0
+    </select>
+    <update id="delCache">
+        update sign_cache set status = 1 where id = #{id} and teacherId = #{teacherId} and courseId = #{courseId} and status = 0
+    </update>
+</mapper>

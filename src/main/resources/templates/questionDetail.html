@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-main {
+            background-color: #E9EEF3;
+            color: #333;
+            text-align: center;
+            line-height: 100%;
+            overflow-y: auto;
+            height: 800px;
+        }
+
+        body>.el-container {
+            margin-bottom: 40px;
+        }
+    </style>
+
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+
+    <el-container>
+        <el-header>
+            <el-page-header @back="goBack" content=" 题目详情">
+            </el-page-header>
+
+        </el-header>
+        <el-main>
+            <el-container>
+                <el-form ref="form" :model="sizeForm" :rules="rules" label-width="80px" size="mini" style="margin:3% 0 0 3%;width: 80%;">
+                    <el-form-item label="题目名称" prop="name">
+                        <el-input v-model="sizeForm.name"></el-input>
+                    </el-form-item>
+
+                    <el-form-item label="题目内容" prop="question">
+                        <el-input type="textarea" :autosize="{ minRows: 4, maxRows: 8}" v-model="sizeForm.question"></el-input>
+                    </el-form-item>
+                    <el-form-item label="题目选项"> <el-button @click="addDomain">添加选项</el-button></el-form-item>
+
+                    <el-form-item
+                            v-for="(domain, index) in sizeForm.domains"
+                            :label="String.fromCharCode('A'.charCodeAt()+index)"
+                            :key="String.fromCharCode('A'.charCodeAt()+index)"
+                            :prop="'domains.' + index + '.value'"
+                    >
+                        <el-input style="width: 68%;" v-model="domain.value"></el-input><el-button @click.prevent="removeDomain(domain)">删除</el-button>
+                    </el-form-item>
+
+                    <el-form-item label="正确答案">
+                        <el-checkbox-group v-model="sizeForm.checkList">
+                            <el-checkbox    v-for="(domain, index) in sizeForm.domains"
+                                            :label="String.fromCharCode('A'.charCodeAt()+index)"
+                                            :key="domain.key">
+                            </el-checkbox>
+                        </el-checkbox-group>
+                    </el-form-item>
+
+                    <el-form-item label="题目分数" prop="score">
+                        <el-input v-model.number="sizeForm.score" style="width:7%;"></el-input>分
+                    </el-form-item>
+
+
+
+                    <el-form-item label="添加到" prop="value">
+                        <el-select v-model="sizeForm.value" placeholder="请选择">
+                            <el-option v-for="item in sizeForm.options2" :key="item.value" :label="item.label"
+                                       :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item size="mini">
+                        <el-button @click="quit">取消</el-button>
+                        <el-button type="primary" @click="onSubmit">立即创建</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-container>
+        </el-main>
+    </el-container>
+
+</div>
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return { visible: false ,
+
+                sizeForm: {
+                    name: '',
+                    value:"",
+                    question:'',
+                    score:'',
+                    domains: [{
+                        key:'A',
+                        value: ''
+                    }],
+
+
+
+
+                    options2: [],
+
+                    checkList: []
+                }
+
+
+
+
+            }
+        },
+        methods: {
+            goBack() {
+                window.location.href="/question";
+            },
+            removeDomain(item) {
+                var index = this.sizeForm.domains.indexOf(item);
+                if (index !== -1) {
+                    this.sizeForm.domains.splice(index, 1)
+                }
+                this.sizeForm.checkList=[];
+            },
+            addDomain() {
+                this.sizeForm.domains.push({
+                    key: String.fromCharCode('A'.charCodeAt()+this.sizeForm.domains.length),
+                    value: '',
+
+                });
+                console.log(key+"?????????????????????");
+            },
+        }
+    })
+</script>
+
+</html>

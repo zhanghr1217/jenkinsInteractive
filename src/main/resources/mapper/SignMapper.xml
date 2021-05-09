@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.SignDao">
+    <resultMap id="querySignRecordByCourseMap" type="SignRecordBean">
+        <result column="sign_id" property="sign.id"></result>
+        <result column="sign_name" property="sign.name"></result>
+        <result column="student_id" property="student.id"></result>
+        <result column="student_name" property="student.name"></result>
+        <result column="major" property="student.major"></result>
+        <result column="the_class" property="student.theClass"></result>
+        <result column="sign_date" property="signDate"></result>
+        <result column="extra" property="extra"></result>
+        <result column="record" property="record"></result>
+        <result column="type" property="type"></result>
+        <result column="status" property="status"></result>
+        <result column="confirm" property="confirm"></result>
+        <result column="score" property="score"></result>
+        <result column="group_id" property="group.id"></result>
+        <result column="name" property="group.name"></result>
+    </resultMap>
+    <select id="querySignByCourse" resultType="SignBean">
+        select id,name,begin,limit_time,type,status,alive,score,group_id,confirm,submit_status
+        from sign
+        where  course_id = #{course_id} and teacher_id = #{teacher_id} and status = #{status} and submit_status = #{submit_status}
+        <if test="id!=null and id!=''">
+            and id like "%"#{id}"%"
+        </if>
+        <if test="name!=null and name!=''">
+            and name like "%"#{name}"%"
+        </if>
+        <if test="type!=null and type!=''">
+            and type like "%"#{type}"%"
+        </if>
+        <if test="begin!=null and begin!=''">
+            and begin like "%"#{begin}"%"
+        </if>
+        <if test="score!=null and score!=''">
+            and score = #{score}
+        </if>
+        order by begin desc
+    </select>
+    <delete id="delSignByCourse">
+        update sign set status = 1 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and alive = 0
+    </delete>
+    <update id="updateSignByCourse">
+        update sign set name = #{name} where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </update>
+    <insert id="addSignByCourse">
+        insert into sign(id,name,begin,limit_time,type,course_id,teacher_id,status,alive,score,group_id,confirm,submit_status)
+        values(#{id},#{name},#{begin},#{limit},#{type},#{course_id},#{teacher_id},0,0,#{score},#{group_id},1,#{submit_status})
+    </insert>
+    <update id="killSign">
+        update sign set alive = 1 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </update>
+    <select id="querySignScoreById" resultType="double">
+        select score from sign where id = #{id}
+    </select>
+    <select id="querySignAliveById" resultType="int">
+        select count(1)
+        from sign
+        where id = #{id} and alive = 0 and status = 0
+    </select>
+    <select id="queryAliveQRCodeById" resultType="int">
+        select count(1)
+        from sign_qrcode where id = #{id} and sign_id = #{sign_id} and alive = 0 and status = 0
+    </select>
+    <insert id="addQRCode">
+        insert into sign_qrcode(id,token,date,alive,sign_id,status)
+        values (#{id},#{token},#{date},0,#{sign_id},0)
+    </insert>
+    <update id="killQRCode">
+        update sign_qrcode set alive = 1 where sign_id = #{sign_id}
+    </update>
+    <select id="querySignRecordByCourse" resultMap="querySignRecordByCourseMap">
+        select sr.sign_id,si.name sign_name,sr.student_id,s.name student_name,s.major,s.the_class,sr.sign_date,sr.extra,sr.record,sr.type,sr.status,sr.confirm,sr.score,sr.group_id,cg.name
+        from sign_record sr,student s,sign si,course_group cg
+        where sr.sign_id = si.id and sr.group_id = cg.id and sr.status = #{status} and sr.sign_id = #{sign_id} and sr.confirm = #{confirm}
+        <if test="student_id!=null and student_id!=''">
+            and sr.student_id like "%"#{student_id}"%"
+        </if>
+        <if test="student_name!=null and student_name!=''">
+            and s.name like "%"#{student_name}"%"
+        </if>
+        <if test="class_name!=null and class_name!=''">
+            and s.the_class like "%"#{class_name}"%"
+        </if>
+        <if test="major_name!=null and major_name!=''">d
+            and s.major like "%"#{major_name}"%"
+        </if>
+    </select>
+    <select id="queryScore" resultType="Double">
+        select score from sign_record where sign_id = #{sign_id} and student_id = #{student_id} and group_id = #{group_id} and status = 0
+    </select>
+    <delete id="delSignRecordByCourse">
+        update sign_record set status = 1 where sign_id = #{sign_id} and student_id = #{student_id} and group_id = #{group_id}
+    </delete>
+    <update id="updateSignRecordByCourse">
+        update sign_record set record = #{record}, score = #{score}
+        where sign_id = #{sign_id} and student_id = #{student_id} and group_id = #{group_id} and status = 0 and confirm = 1
+    </update>
+    <update id="confirmSignRecordByCourse">
+        update sign_record set record = #{record}, score = #{score},confirm = 0
+        where sign_id = #{sign_id} and student_id = #{student_id} and group_id = #{group_id} and status = 0 and confirm = 1
+    </update>
+    <insert id="addSignRecordByCourse">
+        insert into sign_record (sign_id,student_id,type,score,record,status,confirm,group_id)
+        values
+        <foreach collection="list" item="list"  separator=",">
+            (#{sign_id},#{list.sid},#{type},0,1,0,1,#{list.gid})
+        </foreach>
+    </insert>
+    <update id="updateSignRecordByStudent" >
+        update sign_record set sign_date = #{sign_date}, extra = #{extra}, record = #{record}, score = #{score}
+        where sign_id = #{sign_id} and student_id = #{student_id}  and status = 0
+    </update>
+    <select id="checkSignTeacher" resultType="int">
+        select count(1) from sign where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and status = 0
+    </select>
+    <select id="checkSignTeacherAndAlive" resultType="int">
+        select count(1) from sign
+        where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and type = #{type} and status = 0 and alive = 0
+    </select>
+    <select id="querySignStudentInfoById" resultType="StudentBean">
+        select distinct s.id,s.name,s.head from sign_record sr, student s
+        where s.id = sr.student_id and sr.sign_id = #{sign_id} and sr.record = #{record} and sr.status = 0
+    </select>
+    <select id="querySignStudentDetailInfoById" resultType="StudentBean">
+        select s.id,s.name,s.institute,s.major,s.the_class,sr.extra,sr.score,sr.group_id,cs.name simpleGroupName,sr.record
+        from sign_record sr, student s, course_group cs
+        where s.id = sr.student_id and sr.sign_id = #{sign_id} and sr.record = #{record} and sr.status = 0 and cs.id = sr.group_id
+    </select>
+    <insert id="addSignLocation">
+        insert into sign_location(sign_id,location,longitude,latitude,info,status)
+        values (#{sign_id},#{location},#{longitude},#{latitude},#{info},0)
+    </insert>
+    <select id="checkSignLocation" resultType="int">
+        select count(1) from sign_location where sign_id = #{sign_id} and status = 0
+    </select>
+    <update id="updateSignLocation">
+        update sign_location set location = #{location},longitude = #{longitude},latitude = #{latitude},info = #{info}
+        where sign_id = #{sign_id} and status = 0
+    </update>
+    <select id="getSignLocation" resultType="SignLocationBean">
+        select sign_id,location,longitude,latitude,info,status
+        from sign_location where sign_id = #{sign_id} and status = 0
+    </select>
+    <update id="confirmSign">
+        update sign set confirm = 0 where id  = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and confirm = 1
+    </update>
+    <select id="querySignCacheByCourse" resultType="SignBean">
+        select s.id,s.name,s.begin,s.limit_time,s.type,s.status,s.alive,s.score,s.group_id,s.confirm,sc.taskTimestamp
+        from sign s, sign_cache sc
+        where s.course_id = #{course_id} and s.teacher_id = #{teacher_id} and s.status = #{status}
+        and s.submit_status = 1 and s.id = sc.id
+        <if test="id!=null and id!=''">
+            and s.id like "%"#{id}"%"
+        </if>
+        <if test="name!=null and name!=''">
+            and s.name like "%"#{name}"%"
+        </if>
+        <if test="type!=null and type!=''">
+            and s.type like "%"#{type}"%"
+        </if>
+        <if test="score!=null and score!=''">
+            and s.score = #{score}
+        </if>
+        order by sc.taskTimestamp desc
+    </select>
+    <update id="updateSubmitStatus">
+        update sign set submit_status = 0 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and  submit_status = 1 and status = 0
+    </update>
+
+    <select id="querySignByCensus" resultType="SignBean">
+        select id,name,begin
+        from sign
+        where course_id = #{course_id} and teacher_id = #{teacher_id} and status = #{status}
+        <if test="censusType == 1">
+            and date_format(begin,'%Y-%m')=date_format(now(),'%Y-%m')
+        </if>
+        <if test="censusType == 2">
+            and QUARTER(begin)=QUARTER(now())
+        </if>
+        <if test="censusType == 3">
+            and YEAR(begin)=YEAR(NOW())
+        </if>
+
+    </select>
+
+    <select id="querySignStudentByCensus" resultType="StudentBean">
+        select s.id,s.name,s.major,s.the_class,count(sr.record = 0 or null) signCount, count(sr.record = 1 or null) notSignCount
+        from sign_record sr,student s
+        where sr.status = 0 and sr.student_id = s.id  and
+        sr.sign_id in
+        <foreach collection="list" open="(" close=")" separator="," item="item">
+            #{item.id}
+        </foreach>
+        group by sr.student_id,sr.group_id
+    </select>
+
+    <select id="querySignCountByCensus" resultType="SignBean">
+        select s.id ,s.name,s.begin, count(sr.record = 0 or null) signCount, count(sr.record = 1 or null) notSignCount
+        from sign_record sr,sign s where sr.status = 0 and sr.sign_id = s.id and
+        sr.sign_id in
+        <foreach collection="list" open="(" close=")" separator="," item="item">
+            #{item.id}
+        </foreach>
+        group by sr.sign_id order by s.begin asc
+    </select>
+
+
+</mapper>

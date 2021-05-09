@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+    <div id="app">　
+        <el-container>
+            <el-header>
+            <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+                <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                    <el-option label="姓名" value="studentName"></el-option>
+                    <el-option label="学号" value="studentId"></el-option>
+                    <el-option label="院系" value="instituteName"></el-option>
+                    <el-option label="专业" value="majorName"></el-option>
+                    <el-option label="班级" value="className"></el-option>
+                </el-select>
+                <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+            </el-input>
+        </el-header>
+        <el-main>
+            <el-row>班级成员</el-row>
+            <template>
+                <el-table ref="multipleTable" :data="tableData" tooltip-effect="dark" style="width: 100%"
+                    @selection-change="handleSelectionChange"
+                          max-height="550">
+
+                    <el-table-column prop="id" fixed label="学号" width="120">
+                    </el-table-column>
+
+                    <el-table-column prop="name" label="姓名" width="120">
+                    </el-table-column>
+
+                    <el-table-column :formatter="formatter" prop="gender" label="性别" width="120">
+                    </el-table-column>
+
+                    <el-table-column prop="institute" label="院系" width="160">
+                    </el-table-column>
+
+                    <el-table-column prop="major" label="专业" width="160">
+                    </el-table-column>
+
+                    <el-table-column prop="theClass" label="班级" width="120">
+                    </el-table-column>
+                    <el-table-column prop="score" label="分数" width="120">
+                    </el-table-column>
+
+                    <el-table-column label="操作">
+                        <template slot-scope="scope">
+                          <el-button
+                            size="mini"
+                            @click="handleEdit(scope.$index, scope.row)">修改分数</el-button>
+                          <el-button
+                            size="mini"
+                            type="danger"
+                            @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+                        </template>
+                      </el-table-column>
+
+                </el-table>
+
+            </template>
+            </el-main>
+            <el-dialog title="学生信息" :visible.sync="dialogFormVisible">
+                <el-form :model="form" ref="form" :rules="rules">
+                    <el-form-item label="学号" :label-width="formLabelWidth">
+                        <el-input v-model="form.id" autocomplete="off" :readonly="true"></el-input>
+                    </el-form-item>
+                    <el-form-item label="姓名" :label-width="formLabelWidth">
+                        <el-input v-model="form.name" autocomplete="off" :readonly="true"></el-input>
+                    </el-form-item>
+                    <el-form-item label="分数" :label-width="formLabelWidth" prop="score">
+                        <el-input v-model="form.score" autocomplete="off" ></el-input>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="dialogFormVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="updateScore">确 定</el-button>
+                </div>
+            </el-dialog>
+        </el-container>
+    </div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            var valiNumberPass1 = (rule, value, callback) => {//包含小数的数字
+                let reg = /^[+-]?(0|([1-9]\d*))(\.\d+)?$/g;
+                if (value === '') {
+                    callback(new Error('请输入内容'));
+                } else if (!reg.test(value)) {
+                    callback(new Error('请输入数字'));
+                } else {
+                    callback();
+                }
+            };
+            return {
+                visible: false
+                ,
+                dialogFormVisible:false,
+                rules:{
+                    score: [
+                        {required: true, validator:valiNumberPass1, trigger: "blur"}
+                    ]
+                },
+                formLabelWidth: '120px',
+                courseId:"",
+                groupId:"",
+                tableData: [],
+                form: {
+                    id: "",
+                    name: "",
+                    oldScore: 0.0,
+                    score: 0.0
+                },
+
+                multipleSelection: [],
+                select: '',
+                inputCondition: '',
+
+                currentPage1: 5,
+                currentPage2: 5,
+                currentPage3: 5,
+                currentPage4: 4
+            }
+        },
+        methods: {
+            showErr(response){
+                this.$message({
+                    showClose: true,
+                    message: response.status+" "+ response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response){
+                if(response.code == 200){
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                    console.log(response.code)
+                }else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            formatter(row, column) {
+                return row.gender === 1 ? "男" : "女";
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            updateScore(){
+                this.$refs['form'].validate((valid) => {
+                    if (valid) {
+                        var that = this;
+                        $.ajax({
+                            type:"put",
+                            url:"/teacher/group/score",
+                            data:{
+                                groupId:that.groupId,
+                                studentId:that.form.id,
+                                newScore:that.form.score,
+                                oldScore:that.form.oldScore
+                            },
+                            success:function (res) {
+                                that.showMes(res);
+                                that.conditionSearch();
+                                that.dialogFormVisible=false;
+                            },
+                            error:function (e) {
+                                that.showErr(e);
+                            }
+                        });
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+            }
+            });
+
+            },
+            handleEdit(index, row) {
+                // window.location.href = "/course/people/detail";
+                this.form.name = row.name;
+                this.form.id = row.id;
+                this.form.score = row.score;
+                this.form.oldScore = row.score;
+                this.dialogFormVisible = true;
+            },
+            handleDelete(index, row) {
+                console.log(index, row);
+                var that = this;
+                $.ajax({
+                    type:"delete",
+                    url:"/teacher/group/student",
+                    data:{
+                        courseId:that.courseId,
+                        groupId:that.groupId,
+                        studentId:row.id
+                    },
+                    success:function (res) {
+                        that.showMes(res);
+                        that.conditionSearch();
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            handleSizeChange(val) {
+                console.log(`每页 ${val} 条`);
+            },
+            handleCurrentChange(val) {
+                console.log(`当前页: ${val}`);
+            },
+            toggleSelection(rows) {
+                if (rows) {
+                    rows.forEach(row => {
+                        this.$refs.multipleTable.toggleRowSelection(row);
+                    });
+                } else {
+                    this.$refs.multipleTable.clearSelection();
+                }
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            conditionSearch() {
+                console.log(this.select + this.inputCondition);
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/group/students/"+that.groupId+"/0?"+that.select+"="+that.inputCondition,
+                    data:{
+                    },
+                    success:function (res) {
+                        console.log(res);
+                        that.tableData = res;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.mainTablekey = Math.random();
+            },
+            addToClass() {
+
+            }
+
+        },
+        created(){
+            this.courseId = this.getQueryString("courseId");
+            this.groupId = this.getQueryString("groupId");
+            var that = this;
+            $.ajax({
+                type:"get",
+                url:"/teacher/group/students/"+that.groupId+"/0",
+                data:{
+                },
+                success:function (res) {
+                    console.log(res);
+                    that.tableData = res;
+                },
+                error:function (e) {
+                    that.showErr(e);
+                }
+            })
+        }
+    })
+
+
+</script>
+
+</html>
+
+</html>

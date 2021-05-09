@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+
+        .el-container {
+            width: 100%;
+            height: 100%;
+        }
+        .el-checkbox, .el-checkbox__input {
+            white-space: normal;
+            word-break: break-all;
+        }
+
+
+
+
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/echarts.js}"></script>
+<body>
+
+<div id="app"> 　
+    <el-container style="background-color:#f4f4f5;">
+
+        <template>
+            <el-row :gutter="20" style="height: 100%;width: 100%">
+                <!-- 签到学生 -->
+                <!--<el-col><h2>剩余时间：</h2> <a id="timer" style="font-size: 48px;text-align: center;">无限制</a></el-col>-->
+                <el-col :span="15" :offset="5" style="background-color:#ffffff;">
+                    <h4 style="text-align: center;">{{testName}}</h4>
+                </el-col>
+                <el-col :span="15" :offset="5" style="background-color: #ffffff;height: 84%;overflow-y: auto;">
+                    <template>
+                        <div v-for="(item,index) in data">
+                            <el-row style="border: 1px solid #aaaaaa;margin-bottom: 40px;">
+                                <el-col style="height: 65px;line-height: 60px;border-bottom: 1px solid #aaaaaa;background-color: #f5f5f5;vertical-align: middle;padding: 5px 15px 0px 15px;">
+                                    题目{{index+1}}<span v-if="item.type == '2'">(多选)</span>  <span style="float: right;"> {{item.score}}分</span>
+                                </el-col>
+                                <el-container style="padding: 10px 10px 20px 10px;">
+                                    <el-row>
+                                        <el-col style="padding: 25px 5px 25px 20px;border-bottom: 1px solid #dddddd;white-space: pre-wrap;" >{{item.question}}</el-col>
+                                        <template v-if="item.type == '2'">
+                                            <el-checkbox-group  v-model="realAnswer[index].realAnswer">
+                                                <el-col v-for="(g,index1) in item.answer">
+                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-checkbox :label="g.key" disabled >{{g.key}}.{{g.value}}</el-checkbox></el-row>
+                                                </el-col>
+                                            </el-checkbox-group>
+                                        </template>
+
+                                        <template  v-else>
+                                            <el-radio-group v-model="realAnswer[index].realAnswer[0]">
+
+                                                <el-col v-for="g in item.answer">
+                                                    <el-row style="padding: 15px 5px 15px 30px;border-top: 1px solid #dddddd;"><el-radio :label="g.key" disabled style=" width: 100% ; text-overflow: ellipsis; white-space: normal;line-height: 18px;">{{g.key}}.{{g.value}}</el-radio></el-row>
+                                                </el-col>
+
+                                            </el-radio-group>
+                                        </template>
+
+                                    </el-row>
+                                </el-container>
+                            </el-row>
+                        </div>
+                    </template>
+                </el-col>
+                <el-col :span="15" :offset="5">
+                    <div style="float: right;margin-right: -11px;"> <el-button type="success" plain @click="showResult">查看结果</el-button></div>
+                    <div style="float: right;vertical-align: center;line-height: 37px;margin-right: 15px">
+                        <el-switch
+                                v-model="value"
+                                @change="showAnswer(value)"
+                                active-text="显示答案"
+                                active-color="#13ce66"
+                                inactive-color="#ff4949">
+                        </el-switch>
+                    </div>
+                </el-col>
+            </el-row>
+
+
+
+            </el-row>
+        </template>
+
+        <el-drawer
+                title="我是标题"
+                v-show="drawer"
+                ref="drawer"
+                :visible.sync="drawer"
+                :with-header="false"
+
+        >
+            <div style="width: 100%;height: 735px;overflow-y: auto;overflow-x:hidden">
+                <div v-for="(item,index) in analyse"  :id=index style="width: 460px;height:400px;">
+                </div>
+            </div>
+        </el-drawer>
+
+    </el-container>
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                value:false,
+                testCourseId:"",
+                courseId:"",
+                testName:"",
+                limitTime:0,
+                checkList: ['A','C'],
+                radio:'B',
+                data:[],
+                realAnswer:[],
+                noneAnswer:[],
+                realAnswer2:[],
+                timer:null,
+                home_url:"",
+                // 抽屉
+                drawer: false,
+                analyse:[]
+
+            }
+        },
+        methods: {
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            showAnswer(value){
+                if(value){
+                    this.realAnswer = this.realAnswer2;
+                }else {
+                    this.realAnswer = this.noneAnswer;
+                }
+            },
+            showResult(){
+
+                this.drawer = true;
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    async:false,
+                    url:"/teacher/test/testCourse/analyse/"+that.courseId+"/"+that.testCourseId,
+                    data:{},
+                    success:function (res) {
+                        that.analyse = res;
+                        for (var i = 0; i < res.length; i++) {
+                            var x = [];
+                            var y = [];
+                            var o = Object.keys(res[i]);
+                            console.log(o);
+                            o.sort();
+                            for (var j = 0; j < o.length; j++) {
+                                y.push(o[j]);
+                                x.push(res[i][o[j]]);
+                            }
+                            that.open(x.reverse(),y.reverse(),i,that.realAnswer2[i]);
+                            // for(let key  in  res[i]){
+                            //     y.push(key);
+                            //     x.push(res[i][key]);
+                            //     that.open(x.reverse(),y.reverse(),i);
+                            // }
+                            // console.log(y);
+
+                        }
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                });
+                // this.open();
+
+            },
+            open(x,y,index,real){
+                var option = {
+                    title: {
+                        text: '第'+(index+1)+"题: "+" 正确答案："+real.realAnswer
+                    },
+                    backgroundColor: '#fff',
+                    yAxis: {
+                        type: 'category',
+                        axisLine: {
+                            show: false //坐标线
+                        },
+                        axisTick: {
+                            show: false //小横线
+                        },
+                        axisLabel: {
+                            color: '#999' //坐标轴字颜色
+                        },
+                        data: y
+                    },
+
+                    xAxis: {
+                        show: false,
+                    },
+                    grid: {
+                        top: '40',
+                        right: '50',
+                        left: '80',
+                        bottom: '40' //图表尺寸大小
+                    },
+                    // animationDuration: function (idx) {
+                    //                 // 越往后的数据时长越大
+                    //                 return idx * 9000;
+                    //             },
+                    animationDuration: 9000,
+                    series: [{
+                        /* data: [120, 200, 150, 80, 70, 110, 130], */
+                        type: 'bar',
+                        barWidth: '10px',
+                        showBackground: true,
+                        backgroundStyle: {
+                            color: 'rgba(220, 220, 220, 0.4)',
+                            barBorderRadius: [30, 30, 30, 30] //圆角大小
+                        },
+                        label: {
+                            show: true,
+                            position: 'right' //每一条的数据位置
+
+                        },
+                        itemStyle: {
+
+                            normal: {
+                                color: (params) => {
+                                let colors = ['#4956ff', '#2d82ff', '#2dc6ff', '#2fca95', '#4956ff', '#2d82ff', '#2dc6ff', '#2fca95']
+                                return colors[params.dataIndex]
+                            }, //每个数据的颜色
+                            barBorderRadius: [30, 30, 30, 30], //圆角大小
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(0, 103, 255, 0.2)',
+                            shadowOffsetX: -5,
+                            shadowOffsetY: 5,
+
+                        },
+
+
+
+
+                    },
+                        data: x
+            }]
+            };
+
+
+                this.$nextTick(() => {
+                    // var d = document.getElementsByClassName("el-drawer__body")[0];
+                    // d.append("<div id=\"myEcharts\" style=\"width: 600px;height:400px;\"></div>");
+                    //  echarts.init(document.getElementById('0')).setOption(option);
+                    echarts.init(document.getElementById(''+index)).setOption(option);
+            });
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/course/test/testCourse/content/"+that.courseId+"/"+that.testCourseId+"/0",
+                    async:false,
+                    data:{},
+                    success:function (res) {
+                        that.data = JSON.parse(res.testBody);
+                        that.testName = res.name;
+                        that.limitTime = res.limitTime;
+                        that.realAnswer2 = JSON.parse(res.testAnswer);
+                        for (var i = 0; i < that.realAnswer2.length; i++) {
+                            var obj = {};
+                            obj.realAnswer = [];
+                            that.noneAnswer.push(obj);
+                        }
+                        that.realAnswer = that.noneAnswer;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+
+
+        },
+        created() {
+            this.testCourseId = this.getQueryString("testCourseId");
+            this.courseId = this.getQueryString("courseId");
+            this.getInfo();
+
+
+        }
+    })
+
+
+</script>
+
+</html>

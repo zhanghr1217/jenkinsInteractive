@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+  <style>
+    html,
+    body,
+    #app {
+      height: 100%;
+      width: 100%;
+    }
+
+    /* body {
+      overflow-x: hidden;
+      overflow-y: hidden;
+      滚动条
+    } */
+
+    .el-row {
+      margin-bottom: 20px;
+    }
+
+    .el-col {
+      border-radius: 4px;
+      margin-top: 20px;
+      margin-left: 20px;
+    }
+
+    .bg-purple-dark {
+      background: #99a9bf;
+    }
+
+    .bg-purple {
+      background: #d3dce6;
+    }
+
+    .bg-purple-light {
+      background: #e5e9f2;
+    }
+
+    .grid-content {
+      border-radius: 4px;
+      min-height: 36px;
+    }
+
+    .row-bg {
+      padding: 10px 0;
+      background-color: #f9fafc;
+    }
+
+
+
+    .bottom {
+      margin-top: 13px;
+      line-height: 12px;
+    }
+
+    .button {
+      padding: 0;
+      float: right;
+    }
+
+    .image {
+      width: 100%;
+      height: 120px;
+      display: block;
+    }
+
+    .clearfix:before,
+    .clearfix:after {
+      display: table;
+      content: "";
+    }
+
+    .clearfix:after {
+      clear: both
+    }
+
+    .clearfix1 {
+      font-size: 100px;
+      color: cornflowerblue;
+      padding-top: 10px;
+    }
+
+
+    /* 图片上传 */
+    .avatar-uploader .el-upload {
+      border: 1px dashed #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .avatar-uploader .el-upload:hover {
+      border-color: #409EFF;
+    }
+    .avatar-uploader-icon {
+      font-size: 28px;
+      color: #8c939d;
+      width: 178px;
+      height: 178px;
+      line-height: 178px;
+      text-align: center;
+    }
+    .avatar {
+      width: 178px;
+      height: 178px;
+      display: block;
+    }
+    .text-shenglue{
+      display:block;
+      word-break:keep-all;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      -o-text-overflow:ellipsis;
+      -icab-text-overflow:ellipsis;
+      -khtml-text-overflow:ellipsis;
+      -moz-text-overflow: ellipsis;
+      -webkit-text-overflow:ellipsis;
+    }
+    .cont {
+      display: inline;
+      width: 150px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+    }
+  </style>
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　　
+  <div id="default" style="display: block;">
+    <span>当前课程</span>
+    <el-divider></el-divider>
+    <el-row :gutter="20">
+      <div  v-for="item in channels" :key="item.id" class="item">
+        <el-col :span="5">
+          <el-card :body-style="{ padding: '0px' }">
+            <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png"
+                 class="image" :src="item.img">
+            <div style="padding: 4px 10px 10px 20px;">
+              <span :title="item.name+'---'+item.term.name" class="text-shenglue" style="max-width:150px;">{{item.name}} --- {{item.term.name}}</span>
+              <!--<span style="width:120px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">{{item.name}} -&#45;&#45; {{item.term.name}}</span>-->
+              <div class="bottom clearfix">
+                <a style="font-size: small;">{{item.teacher.name}}</a>
+                <a class="cont">{{item.number}}</a>
+                <el-button type="text" class="button"> <a href= "/course" :href="item.link" class="courseLink" target= "iFrameName"> 进入课程</a></el-button>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </div>
+
+      <el-col :span="5" >
+        <el-card :body-style="{ padding: '0px' }">
+          <div style="padding: 0px;width: 100%;height: 175px;text-align: center; margin-top: 10px;">
+            <div class="clearfix1">
+              <i class="el-icon-circle-plus-outline" @click="show"></i>
+            </div>
+            <div style="text-align: center;">
+              <a>添加课程</a>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+
+
+    </el-row>
+    <span>历史课程</span>
+    <el-divider></el-divider>
+    <el-row :gutter="20">
+      <div  v-for="item in channels2" :key="item.id" class="item">
+        <el-col :span="5">
+          <el-card :body-style="{ padding: '0px' }">
+            <img
+                    class="image" :src="item.img">
+            <div style="padding: 4px 10px 10px 20px;">
+              <span :title="item.name+'---'+item.term.name" class="text-shenglue" style="max-width:150px;">{{item.name}} --- {{item.term.name}}</span>
+              <!--<span style="width:120px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">{{item.name}} -&#45;&#45; {{item.term.name}}</span>-->
+              <div class="bottom clearfix">
+                <a style="font-size: small;">{{item.teacher.name}}</a>
+                <a class="cont">{{item.number}}</a>
+                <el-button type="text" class="button"> <a href= "/course" :href="item.link" class="courseLink" target= "iFrameName"> 进入课程</a></el-button>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </div>
+    </el-row>
+  </div>
+
+  <div id="change" style="display: none;">
+    <el-container>
+      <el-form ref="form" :model="sizeForm" label-width="80px" size="mini" style="margin: 3% 0 0 3%;">
+        <el-form-item label="课程名称">
+          <el-input v-model="sizeForm.name"></el-input>
+        </el-form-item>
+        <el-form-item label="课程号">
+          <el-input v-model="sizeForm.number"></el-input>
+        </el-form-item>
+
+        <el-form-item label="课程图片">
+          <el-upload
+                  ref="uploads"
+                  class="avatar-uploader"
+                  :auto-upload="false"
+                  action="/teacher/course"
+                  :show-file-list="true"
+                  drag
+                  :on-change="handlePreview"
+                  :on-remove="handleRemove"
+                  :data="sizeForm"
+                  :on-success="success"
+                  :on-error="error"
+                  accept=".jpg,.jpeg,.png"
+                  :limit="1">
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+            <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过500kb</div>
+          </el-upload>
+        </el-form-item>
+
+        <!--<el-form-item label="课程时长">-->
+        <!--<el-select v-model="sizeForm.region" placeholder="请选择签到类型">-->
+        <!--<el-option label="8周" value="shanghai"></el-option>-->
+        <!--<el-option label="9周" value="shanghai"></el-option>-->
+        <!--<el-option label="12周" value="shanghai"></el-option>-->
+        <!--<el-option label="13周" value="shanghai"></el-option>-->
+        <!--<el-option label="15周" value="beijing"></el-option>-->
+        <!--</el-select>-->
+        <!--</el-form-item>-->
+
+        <!--<el-form-item label="课程学期">-->
+        <!--<el-label>2020春</el-label>-->
+        <!--</el-form-item>-->
+
+        <!--<el-form-item label="是否必修">-->
+        <!--<el-radio-group v-model="sizeForm.resource" size="medium">-->
+        <!--<el-radio label="是"></el-radio>-->
+        <!--<el-radio  label="否"></el-radio>-->
+        <!--</el-radio-group>-->
+        <!--</el-form-item>-->
+        <el-form-item size="large">
+          <el-button type="primary" @click="onSubmit">立即创建</el-button>
+          <el-button @click="quit">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-container>
+  </div>
+
+</div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return { visible: false,
+                sizeForm: {
+                    name: '',
+                    number: ''
+                },
+                channels:[
+                    // {id:0,name:"数据结构",Snum:"1177",interact:"33",attend:"447"},
+                    // {id:1,name:"编译原理",Snum:"127",interact:"35",attend:"1447"},
+                    // {id:2,name:"算大设计",Snum:"77",interact:"13",attend:"156"}
+                ],
+                channels2:[
+                    // {id:0,name:"数据结构",Snum:"1177",interact:"33",attend:"447"},
+                    // {id:1,name:"编译原理",Snum:"127",interact:"35",attend:"1447"},
+                    // {id:2,name:"算大设计",Snum:"77",interact:"13",attend:"156"}
+                ],
+                fileList:[],
+                listLength:0
+
+
+            }
+        },
+        methods:{
+            showErr(response){
+                this.$message({
+                    showClose: true,
+                    message: response.status+" "+ response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response){
+                if(response.code == 200){
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                }else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            show(){
+                document.getElementById("default").style.display="none";
+                document.getElementById("change").style.display="block";
+            },
+            onSubmit() {
+                document.getElementById("change").style.display="none";
+                document.getElementById("default").style.display="block";
+                console.log('submit!');
+                var that = this;
+                if(this.listLength<1){
+                    $.ajax({
+                            url:"/teacher/course",
+                            type:"post",
+                            async:false,
+                            data:{
+                                name:that.sizeForm.name,
+                                number:that.sizeForm.number
+                            },
+                            success:function (res) {
+                                that.showMes(res);
+                            },
+                            error:function (e) {
+                                that.showMes(e)
+                            }
+                        }
+                    )
+                }else {
+                    this.$refs.uploads.submit();
+                }
+                window.setTimeout(function () {
+                    window.location.reload(true);
+                },2000)
+
+
+            },
+            quit(){
+                document.getElementById("change").style.display="none";
+                document.getElementById("default").style.display="block";
+            },
+            handleRemove(file, fileList) {
+                this.listLength = 0;
+
+            },
+            handlePreview(file) {
+                this.listLength =  1;
+
+            },
+            success(response, file, fileList){
+                this.showMes(response);
+
+            },
+            error(err, file, fileList){
+                this.showMes(err)
+            }
+
+        },
+        created(){
+            var that = this;
+            $.ajax({
+                type: "get",
+                url: "/teacher/courses/0/0",
+                data: {
+
+                },
+                dataType: "json",
+                success: function(result){
+                    that.channels=result;
+                    for (var i = 0; i < that.channels.length; i++) {
+                        that.channels[i].link="/course?courseId="+that.channels[i].id
+                    }
+
+                },
+                error:function (e) {
+                    that.showErr(e)
+                }
+            });
+            $.ajax({
+                type: "get",
+                url: "/teacher/courses/1/0",
+                data: {
+
+                },
+                dataType: "json",
+                success: function(result){
+                    that.channels2=result;
+                    for (var i = 0; i < that.channels2.length; i++) {
+                        that.channels2[i].link="/course?courseId="+that.channels2[i].id
+                    }
+
+                },
+                error:function (e) {
+                    that.showErr(e)
+                }
+            });
+        }
+    })
+</script>
+</html>

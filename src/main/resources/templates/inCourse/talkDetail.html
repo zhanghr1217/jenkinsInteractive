@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .demo-table-expand {
+            font-size: 0;
+        }
+        .demo-table-expand label {
+            width: 90px;
+            color: #99a9bf;
+        }
+        .demo-table-expand .el-form-item {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 60%;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+
+<body>
+
+    <div id="app"> 　
+        <el-container>
+            <el-header>
+                <el-page-header @back="goBack" content="  讨论详情" style="width: 80%;margin-top: 1%;">
+                </el-page-header>
+                <el-popconfirm
+                        icon="el-icon-info"
+                        icon-color="red"
+                        title="确定后不可修改"
+                        @confirm="confirmDiscuss"
+                >
+                    <el-button type="success" slot="reference"  style="float: right;margin-top: -26px;">确认成绩</el-button>
+                </el-popconfirm>
+
+            </el-header>
+            <template>
+                <el-label style="margin: 15px 55px;"><a style="font-size: 18px;color: cornflowerblue;">讨论内容：{{discuss.discussBody}}</a></el-label>
+                <el-table
+                  :data="tableData"
+                  style="width: 100%">
+                  <el-table-column type="expand">
+                    <template slot-scope="props">
+                      <el-form label-position="left" inline class="demo-table-expand">
+
+                        <template v-for="o in props.row.body" >
+                            <div v-if="props.row.body.length>0">
+                                <el-form-item :label="o.date" label-width="auto">
+                                    <span>{{o.body}}</span>
+                                </el-form-item>
+                            </div>
+
+                          </template>
+                      </el-form>
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    label="学号"
+                    fixed
+                    prop="student.id">
+                  </el-table-column>
+                  <el-table-column
+                    label="姓名"
+                    prop="student.name">
+                  </el-table-column>
+                  <el-table-column
+                    label="发言次数"
+                    prop="body.length">
+                  </el-table-column>
+                    <el-table-column
+                            label="专业"
+                            prop="student.major">
+                    </el-table-column>
+                    <el-table-column
+                            label="班级"
+                            prop="student.theClass">
+                    </el-table-column>
+                    <el-table-column
+                            label="小组"
+                            prop="group.name">
+                    </el-table-column>
+                  <el-table-column  label="分数">
+                    <template slot-scope="scope">
+                        <el-input v-model="tableData[scope.$index].score"  maxlength="3" placeholder="得分" style="width: 60px" ></el-input>
+                     </template>
+                </el-table-column>
+
+                </el-table>
+              </template>
+          
+        </el-container>
+    </div>
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                courseId:"",
+                discussId:"",
+                tableData: [],
+                discuss:''
+            }
+        },
+        methods: {
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            timestampToTime(timestamp) {
+                var date = new Date(timestamp);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+                Y = date.getFullYear() + '-';
+                M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+                D = date.getDate() + ' ';
+                h = date.getHours() + ':';
+                m = date.getMinutes() + ':';
+                s = date.getSeconds();
+                return Y+M+D+h+m+s;
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            confirmDiscuss(){
+              var that = this;
+              var data = [];
+                for (var i = 0; i < this.tableData.length; i++) {
+                    var obj = {};
+                    obj.id = this.tableData[i].student.id;
+                    obj.score = this.tableData[i].score;
+                    obj.groupId = this.tableData[i].group.id;
+                    data.push(obj);
+                }
+              $.ajax({
+                  type:"put",
+                  url:"/teacher/discuss/student/confirm",
+                  contentType: "application/json; charset=utf-8",
+                  data:JSON.stringify({
+                      courseId:that.courseId,
+                      discussId:that.discussId,
+                      students:data
+                  }),
+                  success:function (res) {
+                      that.showMes(res);
+                  },
+                  error:function (e) {
+                      that.showErr(e);
+                  }
+              })
+            },
+            goBack() {
+                window.location.href = "/course/talk?courseId="+this.courseId;
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/discuss/students/"+that.courseId+"/"+that.discussId+"/0",
+                    data:{},
+                    success:function (res) {
+                        that.tableData = res;
+                        for (var i = 0; i < that.tableData.length; i++) {
+                            that.tableData[i].body = JSON.parse(res[i].body);
+                            if(that.tableData[i].body!=null){
+                                for (var j = 0; j < that.tableData[i].body.length; j++) {
+                                    that.tableData[i].body[j].date = that.timestampToTime(that.tableData[i].body[j].date);
+                                }
+                            }
+                        }
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            getTheme(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/discuss/theme/"+that.discussId,
+                    data:{},
+                    success:function (res) {
+                        that.discuss = res;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+
+                })
+            }
+        },
+        created() {
+            this.courseId = this.getQueryString("courseId");
+            this.discussId = this.getQueryString("discussId");
+            this.getInfo();
+            this.getTheme();
+        }
+    })
+
+
+</script>
+
+</html>
+

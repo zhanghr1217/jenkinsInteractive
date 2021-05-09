@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+        .iconSize {
+            margin-left: 1%;
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+    <div id="app">　
+        <el-container>
+            <el-header>
+                <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+                    <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                        <el-option label="标题" value="name"></el-option>
+                        <el-option label="日期" value="date"></el-option>
+                    </el-select>
+                    <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+                </el-input>
+            </el-header>
+            <el-main>
+
+
+        <template>
+            <el-table :data="tableData" style="width: 100%"
+                      max-height="450">
+                <el-table-column label="标题" width="180" fixed show-overflow-tooltip>
+                    <template slot-scope="scope">
+                        <span>{{ scope.row.name }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="日期"  width="180">
+                    <template slot-scope="scope">
+                        <i class="el-icon-time"></i>
+                        <span>{{ scope.row.createDate }}</span>
+                    </template>
+                </el-table-column>
+
+
+
+                <el-table-column label="参与小组" width="150" show-overflow-tooltip>
+                    <template slot-scope="scope">
+                        <el-button-group v-for="(g,index) in scope.row.groupName" :key="index">
+                            <el-tag size="medium">{{g}}</el-tag>
+                        </el-button-group>
+
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="状态" width="120" :formatter="formatter2" prop="alive">
+                </el-table-column>
+
+                <el-table-column label="确认" width="120" :formatter="formatter3" prop="confirm">
+                </el-table-column>
+
+                <el-table-column label="操作" width="280">
+                    <template slot-scope="scope">
+                        <el-button size="mini" type="primary" plain @click="handleEdit(scope.$index, scope.row)">查看</el-button>
+                        <el-button size="mini" type="success" plain @click="handleStart(scope.$index, scope.row)" :disabled='scope.row.alive===1'>进入</el-button>
+
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)"  :disabled='scope.row.alive===1'>结束
+                        </el-button>
+
+                    </template>
+                </el-table-column>
+            </el-table>
+
+                 </template>
+            </el-main>
+            <elk-footer>
+                <div class="block" style="width: 100%;text-align: center">
+                    <!-- 分页 -->
+                    <el-pagination  @current-change="handleCurrentChange"
+                                    :current-page="currentPage" :page-size="pageSize"
+                                    layout="total, prev, pager, next, jumper" :total="total">
+                    </el-pagination>
+                </div>
+            </elk-footer>
+        </el-container>
+
+    </div>
+
+</body>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                mainTablekey: 1,
+                courseId:"",
+                currentPage: 1,
+                total: 0,
+                pageSize: 15,
+                select: '',
+                inputCondition: '',
+                form: {
+                    cid:'',
+                    id:'1',
+                    },
+                classes:[
+             
+                ],
+                dialogFormVisible: false,
+                formLabelWidth: '120px',
+
+                tableData: []
+
+            }
+        },
+        methods: {
+            conditionSearch() {
+                //刷新表格数据
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/course/test/testCourses/"+that.courseId+"/0/0/" + that.currentPage + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+
+            },
+            formatter2(row, column) {
+                if (row.alive === 1) {
+                    return "已结束";
+                } else return "正在进行"
+            },
+            formatter3(row, column) {
+                if (row.confirm === 1) {
+                    return "未确认";
+                } else return "已确认"
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            handleEdit(index, row) {
+                window.location.href = "/course/test/history/detail?courseId="+this.courseId+"&testCourseId="+row.id;
+            },
+            handleDelete(index, row) {
+                if(row.alive==1){
+                    this.$message({
+                        showClose: true,
+                        message: "该测试已经结束",
+                        type: 'error'
+                    });
+                }else {
+                    var that = this;
+                    $.ajax({
+                        type:"put",
+                        url:"/teacher/course/test/testCourse/out",
+                        data:{
+                            courseId:that.courseId,
+                            testCourseId:row.id
+                        },
+                        success:function (res) {
+                            that.showMes(res);
+                            that.conditionSearch();
+                        },
+                        error:function (e) {
+                            that.showErr(e);
+                        }
+                    })
+                }
+            },
+            handleStart(index,row){
+                if (row.alive == 1) {
+                    this.$message({
+                        showClose: true,
+                        message: "此测试已经结束",
+                        type: 'error'
+                    });
+                } else {
+                    window.open("/course/test/teacher/content?courseId=" + this.courseId + "&testCourseId=" + row.id);
+                }
+            },
+            handleCurrentChange(val) {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/course/test/testCourses/"+that.courseId+"/0/0/" + val + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/course/test/testCourses/"+that.courseId+"/0/0/1",
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        // that.channels=result;
+                        // for (var i = 0; i < that.channels.length; i++) {
+                        //     that.channels[i].link="/course?courseId="+that.channels[i].id
+                        // }
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                        console.log(that.tableData);
+                    },
+                    error: function (e) {
+                        that.showErr(e)
+                    }
+                });
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            }
+
+        },
+        created(){
+            this.courseId = this.getQueryString("courseId");
+            this.getInfo();
+        }
+    })
+
+
+</script>
+
+</html>
+

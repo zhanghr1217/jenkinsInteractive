@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-main {
+            background-color: #E9EEF3;
+            color: #333;
+            text-align: center;
+            line-height: 100%;
+        }
+
+        body > .el-container {
+            margin-bottom: 40px;
+        }
+    </style>
+
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+
+    <el-container>
+        <el-header>
+            <el-page-header @back="goBack" content=" 签到详情 " style="width: 80%;margin-top: 1%;">
+            </el-page-header>
+            <el-popconfirm
+                    icon="el-icon-info"
+                    icon-color="red"
+                    title="确定后不可修改"
+                    @confirm="confirm"
+            >
+            <el-button type="success" slot="reference" style="float: right;margin-top: -26px;">确认成绩</el-button>
+            </el-popconfirm>
+        </el-header>
+        <el-main>
+            <el-tabs type="border-card" :stretch=true>
+                <el-tab-pane label="已签到" style="overflow-y: auto; height: 480px;">
+
+                    <template>
+                        <el-table
+                                :data="signData"
+                                stripe
+                                style="width: 100%">
+                            <el-table-column prop="id" fixed label="学号" width="180">
+                            </el-table-column>
+
+                            <el-table-column prop="name" label="姓名" width="120">
+                            </el-table-column>
+
+                            <el-table-column prop="major" label="专业" width="180">
+                            </el-table-column>
+
+                            <el-table-column prop="theClass" label="班级">
+                            </el-table-column>
+
+                            <el-table-column prop="simpleGroupName" label="小组" width="180">
+                            </el-table-column>
+                            <el-table-column prop="extra" label="token" show-overflow-tooltip>
+                            </el-table-column>
+                            <el-table-column  label="分数"  width="120">
+                                <template slot-scope="scope">
+                                    <el-input v-model="signData[scope.$index].score"  maxlength="3" placeholder="得分" style="width: 55px" ></el-input>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column  label="移动"  width="120">
+                                <template slot-scope="scope">
+                                    <el-button size="mini" type="success" @click="handleEdit1(scope.$index, scope.row)">移至未签</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template>
+
+
+                </el-tab-pane>
+                <el-tab-pane label="未签到" style="overflow-y: auto; height: 480px;">
+                    <template>
+                        <el-table
+                                :data="noSignData"
+                                stripe
+                                style="width: 100%">
+                            <el-table-column prop="id" label="学号" width="180">
+                            </el-table-column>
+
+                            <el-table-column prop="name" label="姓名" width="120">
+                            </el-table-column>
+
+                            <el-table-column prop="major" label="专业" width="180">
+                            </el-table-column>
+
+                            <el-table-column prop="theClass" label="班级">
+                            </el-table-column>
+
+                            <el-table-column prop="simpleGroupName" label="小组" width="180">
+                            </el-table-column>
+                            <el-table-column  label="分数"  width="120">
+                                <template slot-scope="scope">
+                                    <el-input v-model="noSignData[scope.$index].score"  maxlength="3" placeholder="得分" style="width: 55px" ></el-input>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column  label="操作"  width="120">
+                                <template slot-scope="scope">
+                                    <el-button size="mini" type="success" @click="handleEdit2(scope.$index, scope.row)">移至已签</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template>
+                </el-tab-pane>
+            </el-tabs>
+        </el-main>
+    </el-container>
+
+</div>
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                courseId: "",
+                signId: "",
+                signData: [],
+                noSignData: [],
+                tableData: [],
+                mainTablekey: 1
+
+            }
+        },
+        methods: {
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            handleEdit1(index,row){
+                var that = this;
+                $.ajax({
+                    type:"put",
+                    url:"/teacher/sign/stuInfo",
+                    async:false,
+                    data:{
+                        courseId:that.courseId,
+                        signId:that.signId,
+                        studentId:row.id,
+                        score:row.score,
+                        groupId:row.groupId,
+                        record:1
+                    },
+                    success:function (res) {
+                        that.showMes(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.getSign();
+                this.getNoSign();
+            },
+            handleEdit2(index,row){
+                var that = this;
+                $.ajax({
+                    type:"put",
+                    async:false,
+                    url:"/teacher/sign/stuInfo",
+                    data:{
+                        courseId:that.courseId,
+                        signId:that.signId,
+                        studentId:row.id,
+                        score:row.score,
+                        groupId:row.groupId,
+                        record:0
+                    },
+                    success:function (res) {
+                        that.showMes(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.getSign();
+                this.getNoSign();
+            },
+            confirm(){
+                var that = this;
+                var data = [];
+                for (var i = 0; i <  that.signData.length; i++) {
+                    data.push(that.signData[i]);
+                }
+                for (var i = 0; i < that.noSignData.length; i++) {
+                    data.push(that.noSignData[i]);
+                }
+                $.ajax({
+                    type:"put",
+                    url:"/teacher/sign/record/confirm",
+                    contentType: "application/json; charset=utf-8",
+                    data:JSON.stringify({
+                        courseId:that.courseId,
+                        students:data,
+                        signId:that.signId
+
+                    }),
+                    success:function (res) {
+                        that.showMes(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                })
+            },
+            goBack() {
+                window.location.href = "/course/sign?courseId="+this.courseId;
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            getSign(){
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/sign/stuDetailInfo/" + that.signId + "/" + that.courseId + "/0",
+                    data: {},
+                    success: function (res) {
+                        console.log(res);
+                        that.signData = res;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.mainTablekey = Math.random();
+            },
+            getNoSign(){
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/sign/stuDetailInfo/" + that.signId + "/" + that.courseId + "/1",
+                    data: {},
+                    success: function (res) {
+                        console.log(res);
+                        that.noSignData = res;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.mainTablekey = Math.random();
+            }
+        },
+        created() {
+            this.courseId = this.getQueryString("courseId");
+            this.signId = this.getQueryString("signId");
+
+            this.getSign();
+            this.getNoSign();
+        }
+    })
+</script>
+
+</html>

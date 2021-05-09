@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>签到</title>
+    <link rel="stylesheet" href="css/index.css" th:href="@{/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+        .el-container{
+            width: 100%;
+            height: 100%;
+        }
+        .el-row{
+            width: 100%;
+            height: 100%;
+        }
+        .imgsty{
+            height:800px;
+            overflow-y:auto;
+            margin-top: 3%;
+        }
+        .el-scrollbar__wrap{
+            overflow-x:hidden;
+            /* 不显示横向滚动条 */
+        }
+        .el-avatar>img {
+            width: 100%;
+            display: block;
+            height: 100%;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="app" >  　
+    <template>
+        <el-row>
+            <el-col :span="9" :offset="1">
+                <!-- 二维码 -->
+                <div
+                        style="height: 47px;width: 95%;margin-left:30px;margin-right:110px;vertical-align: middle;color: #428ace;font-size: 28px;line-height: 42px;border-bottom:1px solid #c7cdd1">
+                    {{courseName}}
+                    <a style="color: rgb(24, 23, 23);">>签到</a>
+                </div>
+                <div style="width: 91%;
+                            border-radius: 2%;
+                            margin: 100px 0 0 47px;
+                            height: 800px;background-color: #e8e8e8;"
+                >
+                    <img :src="home_url" style="width: 85%;height: 85%;margin: 8% 0px 0px 8%;">
+                </div>
+            </el-col>
+
+            <el-col :span="13" >
+
+                <template>
+                    <el-tabs v-model="activeName" type="card"  @tab-click="handleClick" style="margin-top: 6px;margin-right: 50px;">
+                        <el-tab-pane  :label="sign_label" name="first" class="imgsty">
+                            <el-scrollbar style="height: 100%;">
+                                <div  v-for="item in signStu" :key="item.id">
+                                    <el-col :span="3">
+                                        <div style="text-align: center;">
+                                            <el-avatar icon="el-icon-user-solid" :src="item.head"></el-avatar>
+                                            <p style="margin:0 0 25px;">{{item.name}}</p>
+                                        </div>
+                                    </el-col>
+                                </div>
+                            </el-scrollbar>
+                        </el-tab-pane>
+
+                        <el-tab-pane :label="noSign_label" name="second" class="imgsty">
+                            <el-scrollbar style="height: 100%;">
+                                <div  v-for="item2 in notSignStu" :key="item2.id">
+                                    <el-col :span="3">
+                                        <div style="text-align: center;">
+                                            <el-avatar icon="el-icon-user-solid" :src="item2.head"></el-avatar>
+                                            <p style="margin:0 0 25px;">{{item2.name}}</p>
+                                        </div>
+                                    </el-col>
+                                </div>
+                            </el-scrollbar>
+
+                        </el-tab-pane>
+                    </el-tabs>
+                </template>
+            </el-col>
+            <el-col :span="23" :offset="1">
+                <div
+                        style="height: 65px;width: 90%;margin-left:30px;margin-right:110px;vertical-align: middle;color: #428ace;font-size: 28px;line-height: 60px;border-bottom:1px solid #c7cdd1">
+                    <!--&nbsp;&nbsp;&nbsp;签到码：<a style="color: rgb(24, 23, 23);">GB59Kl</a>-->
+                    <div style="float:right;margin-right: 7px;"><el-button style="font-size: 40px;color: #428ace;" type="text" @click="stopSign">结束</el-button></div>
+                </div>
+
+            </el-col>
+
+            <div style="position:absolute;    margin-left: 86%;">
+                <!--<a style="font-size: 32px;color: #428ace;" type="text">45/60</a>-->
+            </div>
+
+
+        </el-row>
+
+
+    </template>
+</div>
+
+</body>
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                courseId:"",
+                courseName:"",
+                signId:"",
+                limit:0,
+                type:0,
+                activeName: 'first',
+                sign_label:"已签到:",
+                noSign_label:"未签到:",
+                home_url: '',
+                signStu:[],
+                time1:null,
+                time2:null,
+                time3:null,
+                notSignStu:[]
+
+            }
+        },
+        methods: {
+
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            stopSign(){
+                var that = this;
+                clearInterval(this.time1);
+                this.time1 = null;
+                clearInterval(this.time2);
+                this.time2 = null;
+                clearInterval(this.time3);
+                this.time3 = null;
+                $.ajax({
+                    type:"put",
+                    url:"/teacher/sign/stop",
+                    data:{
+                        signId:that.signId,
+                        courseId:that.courseId,
+                        type:that.type
+                    },
+                    success:function (res) {
+                        that.showMes(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                    })
+            },
+            refresh(){
+
+                    console.log(this);
+                    var  a = Math.random();
+                    var url= "/teacher/sign/code/"+this.signId+"/"+this.courseId+"/"+this.type+"?abc="+a;
+                    this.home_url=url;
+            },
+            getCourseName(){
+              var that = this;
+              $.ajax({
+                  url:"/teacher/course/"+that.courseId,
+                  success:function (res) {
+                      that.courseName = res.name;
+                  },
+                  error:function (e) {
+                      that.showErr(e);
+                  }
+              })
+            },
+           getSign(){
+                var that =this;
+               $.ajax({
+                   type:"get",
+                   url:"/teacher/sign/stuInfo/"+that.signId+"/"+that.courseId+"/0",
+                   data:{},
+                   success:function (res) {
+                       console.log(res);
+                       that.signStu = res;
+                       that.sign_label = "已签到:"+res.length;
+                   },
+                   error:function (e) {
+                       that.showErr(e);
+                       window.close();
+                   }
+
+               })
+           },
+            getNotSign(){
+                var that =this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/sign/stuInfo/"+that.signId+"/"+that.courseId+"/1",
+                    data:{},
+                    success:function (res) {
+                        console.log(res);
+                        that.notSignStu = res;
+                        that.noSign_label ="未签到:"+ res.length;
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                        window.close();
+                    }
+
+                })
+            }
+        },
+        computed: {
+            newRegion() {
+                return this.home_url;
+            }
+        },
+        watch: {
+            newRegion(val) {
+            }
+
+        },
+        created() {
+            var that = this;
+            var id = that.getQueryString("courseId");
+            var signId = that.getQueryString("signId");
+            var type = that.getQueryString("type");
+            var limit = that.getQueryString("limit");
+            that.courseId = id;
+            that.signId = signId;
+            that.type = type;
+            that.limit = limit;
+            this.getCourseName();
+            var a = Math.random();
+            var  url= "/teacher/sign/code/"+that.signId+"/"+that.courseId+"/"+that.type+"?abc="+a;
+            this.home_url=url;
+
+            if(that.limit!=0&&that.limit!=null&&typeof(that.limit) != 'undefined'){
+              this.time1 =  setInterval(() => {this.refresh()},this.limit*1000);
+            }
+            // if(this.type==2){
+            //     this.$alert('请在手机企业微信选择位置', '提示', {
+            //                 confirmButtonText: '确定'})
+            // }
+            this.getSign();
+            this.getNotSign();
+
+            this.time2 = setInterval(() => {this.getSign()},3000);
+            this.time3 = setInterval(() => {this.getNotSign()},3000);
+            // document.getElementById("qrcode").src=url;
+        },
+        beforeDestroy() {
+            clearInterval(this.time1);
+            this.time1 = null;
+            clearInterval(this.time2);
+            this.time2 = null;
+            clearInterval(this.time3);
+            this.time3 = null;
+        }
+    })
+
+
+</script>
+
+</html>

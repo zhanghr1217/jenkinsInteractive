@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-main {
+            background-color: #E9EEF3;
+            color: #333;
+            text-align: center;
+            line-height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            height: 590px;
+        }
+
+        body>.el-container {
+            margin-bottom: 40px;
+        }
+    </style>
+
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+    <div id="app">　
+
+        <el-container>
+            <el-header>
+                <el-page-header @back="goBack" content=" 个人信息">
+                </el-page-header>
+               
+            </el-header>
+            <el-main>
+              
+                <el-form   label-width="110px" style="margin-left: 20%;width: 60%;">
+                    <el-form-item label="照片：">
+                        <div class="block"><el-avatar shape="square" :size="50" :src="squareUrl"></el-avatar></div>
+                      </el-form-item>
+                      <el-form-item label="企业微信头像：" >
+                        <div class="block"><el-avatar :size="50" :src="circleUrl"></el-avatar></div>
+                      </el-form-item>
+                    <el-form-item label="学号：">
+                      <el-input readonly:true v-model="peopleInfo.stunumber"></el-input>
+                    </el-form-item>
+                    <el-form-item label="姓名：">
+                        <el-input readonly:true v-model="peopleInfo.name"></el-input>
+                      </el-form-item>
+                      <el-form-item label="性别">
+                        <el-input readonly:true v-model="peopleInfo.sex"></el-input>
+                      </el-form-item>
+                      <el-form-item label="班级">
+                        <el-input readonly:true v-model="peopleInfo.class"></el-input>
+                      </el-form-item>
+                      <el-form-item label="专业">
+                        <el-input readonly:true v-model="peopleInfo.major"></el-input>
+                      </el-form-item>
+                      <el-form-item label="年级">
+                        <el-input  readonly:true  v-model="peopleInfo.grade"></el-input>
+                      </el-form-item>
+              
+                  </el-form>
+              
+            </el-main>
+        </el-container>
+
+    </div>
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return { visible: false ,
+               peopleInfo: 
+                    {
+                        name:'张三',
+                        class:'网络172',
+                        major:'网络安全',
+                        sex:'0',
+                        stunumber:'201708024200',
+                        grade:'大三',
+                        score:68
+                    }
+            
+            }
+        },
+        methods: {
+            goBack() {
+                window.history.back(-1);
+            }
+        }
+    })
+</script>
+
+</html>

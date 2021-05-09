@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>签到</title>
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+        .el-avatar>img {
+            width: 100%;
+            display: block;
+            height: 100%;
+            vertical-align: middle;
+        }
+
+
+
+
+    </style>
+</head>
+
+<body>
+
+<div id="app"> 　
+
+
+    <el-row >
+        <!-- 签到学生 -->
+        <el-col :span="24"  style="background-color:#ffffff;text-align: center;margin-top: 8vh;" th:if="${msg.code} != 200">
+            <a style="font-size: 8vw; font-weight:bold; color: red;">签到失败</a>
+        </el-col>
+        <el-col :span="24"  style="background-color:#ffffff;text-align: center;margin-top: 8vh;" th:if="${msg.code} == 200">
+            <a style="font-size: 8vw; font-weight:bold; color: green;">签到成功</a>
+        </el-col>
+        <el-col :span="24"  style="background-color: #ffffff;height:56vh ;text-align: center;">
+            <template>
+                <el-avatar style="margin-top: 15vh;" :size="avatarSize" th:if="${stu}!=null" th:src = "${stu.thumb_avatar}"></el-avatar>
+                <div style="width: 100%;margin-top: 2vh;font-size: 9vw;" th:if="${stu}!=null" > <a th:text="${stu.name}"></a></div>
+                <div  style="width: 100%;font-size: 3vw;">
+                    <a th:text="${#dates.format(now,'yyyy-MM-dd HH:mm:ss')}"></a>
+                </div>
+                <div style="margin-top: 2vh;font-size: 4vw;" th:if="${msg.code} != 200">
+                    <a th:text="'错误码:'+${msg.code}"></a>
+                </div>
+                <div style="margin-top: 1vh;font-size: 7vw;"  th:if="${msg.code} != 200">
+                    <a style="font-size: 7vw;" th:text="'错误信息：'+${msg.descinfo}"></a>
+                </div>
+                <div style="margin-top: 1vh;font-size: 7vw;"  th:if="${msg.code} == 200">
+                    <a style="font-size: 7vw;" th:text="'已签到请返回'"></a>
+                </div>
+
+            </template>
+        </el-col>
+
+
+        <el-col :span="24" style="text-align: center;">
+            <template th:if="${msg.code} == 200">
+                <el-button id="bt_operate" type="primary" plain @click="handleClick">关闭</el-button>
+            </template>
+            <template th:if="${msg.code} != 200">
+                <!--<el-button id="bt_operate" type="danger"  @click="restart">重试</el-button>-->
+                <el-button id="bt_operate" type="primary" plain @click="handleClick">关闭</el-button>
+            </template>
+
+        </el-col>
+    </el-row>
+
+</div>
+
+</body>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                visible: false,
+                avatarSize:80,
+                // stu:{
+                //     name:"周俊杰",
+                //     time:"2021/2/8 18:08:23"
+                // },
+                // status:'fail',
+                // msg:"签到失败",
+                // error_msg:'不在签到范围内'
+
+
+            }
+        },
+        methods: {
+            handleClick() {
+                window.close();
+            },
+            restart(){
+                window.location.href="/wxwork/student/qr";
+            }
+        },
+
+    })
+
+
+</script>
+
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        .iconSize {
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+            margin-right: 30px;
+        }
+        .inputsize {
+            width: 60%;
+            margin-left: 20%;
+        }
+    </style>
+</head>
+<!-- import Vue before Element -->
+<script src="../js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="../js/index.js" th:href="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+<div id="app">　
+    <div id="before" style="display: block;">
+        <el-container>
+            <el-header>
+                <div class="iconSize">
+                    <el-button type="primary" icon="el-icon-circle-plus-outline" @click="show">新建签到</el-button>
+                    <el-button style="float: right;margin-top: 0vh;" @click="census">查看统计</el-button>
+                </div>
+
+            </el-header>
+            <el-input placeholder="请输入内容" v-model="inputCondition" class="input-with-select inputsize">
+                <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 95px;">
+                    <el-option label="标题" value="name"></el-option>
+                    <el-option label="起始" value="begin"></el-option>
+                    <el-option label="分数" value="score"></el-option>
+                </el-select>
+                <el-button slot="append" icon="el-icon-search" @click="conditionSearch"></el-button>
+            </el-input>
+            <template>
+                <!-- 签到列表 -->
+                <el-table :data="tableData" style="width: 100%"
+                          max-height="450">
+                    <el-table-column label="标题" fixed width="160"  show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <span>{{ scope.row.name }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="创建时间"  width="180">
+                        <template slot-scope="scope">
+                            <i class="el-icon-time"></i>
+                            <span>{{ scope.row.begin }}</span>
+                        </template>
+                    </el-table-column>
+
+                    <!--<el-table-column label="限制时间" width="180">-->
+                    <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.limitTime }}秒</span>-->
+                    <!--</template>-->
+                    <!--</el-table-column>-->
+                    <el-table-column label="类型" width="120" :formatter="formatter" prop="type">
+                    </el-table-column>
+                    <el-table-column label="参与小组" width="140" show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <el-button-group v-for="(g,index) in scope.row.groupName" :key="index">
+                                <el-tag size="medium">{{g}}</el-tag>
+                            </el-button-group>
+
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="分数"  width="100">
+                        <template slot-scope="scope">
+                            <span>{{ scope.row.score }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="状态" width="100"  :formatter="formatter2" prop="alive">
+                    </el-table-column>
+                    <el-table-column label="确认" width="100" :formatter="formatter3" prop="confirm">
+                    </el-table-column>
+                    <el-table-column   label="操作" width="280">
+                        <template slot-scope="scope">
+                            <el-button size="mini" type="primary" @click="handleEdit(scope.$index, scope.row)">查看</el-button>
+                            <el-button size="mini" type="success" @click="handleStart(scope.$index, scope.row)" plain>开始</el-button>
+                            <el-button size="mini" type="danger" plain @click="handleDelete(scope.$index, scope.row)" :disabled='scope.row.alive===1'>结束
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div class="block" style="width: 100%;text-align: center">
+                    <!-- 分页 -->
+                    <el-pagination  @current-change="handleCurrentChange"
+                                   :current-page="currentPage" :page-size="pageSize"
+                                   layout="total, prev, pager, next, jumper" :total="total">
+                    </el-pagination>
+                </div>
+            </template>
+        </el-container>
+    </div>
+
+    <div id="after" style="display: none;">
+        <el-container>
+            <el-form ref="form" :model="sizeForm" label-width="100px" size="mini" :rules="rules"
+                     style="margin:3% 0 0 3%;">
+                <el-form-item label="签到名称" prop="name">
+                    <el-input v-model="sizeForm.name"></el-input>
+                </el-form-item>
+                <el-form-item label="签到类型" prop="type">
+                    <el-select v-model="sizeForm.type" placeholder="请选择签到类型">
+                        <el-option label="扫码签到" value=1></el-option>
+                        <el-option label="位置签到" value=2></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="签到分值" prop="score">
+                    <el-input v-model="sizeForm.score"></el-input>
+                </el-form-item>
+
+
+                <el-form-item id="tim" label="刷新间隔" style="display: none;">
+                    <el-select v-model="sizeForm.value" placeholder="请选择">
+                        <el-option v-for="item in sizeForm.options" :key="item.value" :label="item.label"
+                                   :value="item.value">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item id="tim2" label="签到地点" style="display: none;">
+                    <el-select v-model="sizeForm.locationId" placeholder="请选择">
+                        <el-option v-for="item in sizeForm.locations" :key="item.id" :label="item.description"
+                                   :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <!--<el-form-item label="活动时间">-->
+                <!--&lt;!&ndash;<el-col :span="11">&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-date-picker type="date" placeholder="选择日期" v-model="sizeForm.date1"&ndash;&gt;-->
+                <!--&lt;!&ndash;style="width: 100%;"></el-date-picker>&ndash;&gt;-->
+                <!--&lt;!&ndash;</el-col>&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-col class="line" :span="2">-</el-col>&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-col :span="11">&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-time-picker placeholder="选择时间" v-model="sizeForm.date2"&ndash;&gt;-->
+                <!--&lt;!&ndash;style="width: 100%;"></el-time-picker>&ndash;&gt;-->
+                <!--&lt;!&ndash;</el-col>&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-select v-model="sizeForm.limitTime" placeholder="请选择签到">&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-option label="扫码签到" value="1"></el-option>&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-option label="位置签到" value="2"></el-option>&ndash;&gt;-->
+                <!--&lt;!&ndash;<el-option label="手势签到" value="3"></el-option>&ndash;&gt;-->
+                <!--&lt;!&ndash;</el-select>&ndash;&gt;-->
+                <!--</el-form-item>-->
+
+                <el-form-item label="参与人员" prop="checkedCities">
+                    <template>
+                        <el-checkbox :indeterminate="sizeForm.isIndeterminate" v-model="sizeForm.checkAll"
+                                     @change="handleCheckAllChange">全选
+                        </el-checkbox>
+                        <div style="margin: 15px 0;"></div>
+                        <el-checkbox-group v-model="sizeForm.checkedCities" @change="handleCheckedCitiesChange">
+                            <el-checkbox v-for="city in sizeForm.cities" :label="city.id" :key="city.id">{{city.name}}
+                            </el-checkbox>
+                        </el-checkbox-group>
+                    </template>
+                </el-form-item>
+                <el-form-item label="立即推送">
+                    <el-radio-group v-model="sizeForm.submitType" size="medium" style="width: 17rem;" @change="submitTypeChange">
+                        <el-radio :label="0">是</el-radio>
+                        <el-radio :label="1">否</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="推送时间"  id="sTime" style="display: none">
+
+                    <el-date-picker
+                            v-model="sizeForm.submitTime"
+                            type="datetime"
+                            placeholder="选择日期时间"
+                            align="right"
+                            value-format="yyyy-MM-dd HH:mm:ss"
+                            :picker-options="pickerOptions"
+                            style="width: 17rem;"
+                    >
+                    </el-date-picker>
+                </el-form-item>
+
+                <!--<el-form-item label="允许补签">-->
+                <!--<el-radio-group v-model="sizeForm.resource" size="medium">-->
+                <!--<el-radio label="是"></el-radio>-->
+                <!--<el-radio label="否"></el-radio>-->
+                <!--</el-radio-group>-->
+                <!--</el-form-item>-->
+                <el-form-item size="large">
+                    <el-button type="primary" @click="onSubmit">立即发布</el-button>
+                    <el-button @click="quit">取消</el-button>
+                </el-form-item>
+            </el-form>
+        </el-container>
+    </div>
+</div>
+
+<!-- 新建签到表单 -->
+
+
+</body>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            var valiNumberPass1 = (rule, value, callback) => {//包含小数的数字
+                let reg = /^[+-]?(0|([1-9]\d*))(\.\d+)?$/g;
+                if (value === '') {
+                    callback(new Error('请输入内容'));
+                } else if (!reg.test(value)) {
+                    callback(new Error('请输入数字'));
+                } else {
+                    callback();
+                }
+            };
+            return {
+                visible: false
+                ,
+                courseId: "",
+                tableData: [],
+                mainTablekey: 1,
+
+                currentPage: 1,
+                total: 0,
+                pageSize: 15,
+
+
+                sizeForm: {
+
+                    value: 5,
+                    name: '',
+                    type: '',
+                    limitTime: '',
+                    date1: '',
+                    date2: '',
+                    delivery: false,
+                    resource: '',
+                    submitType: 0,
+                    submitTime: '',
+                    locationId:1,
+                    location:{
+
+                    },
+                    locations: [],
+                    options: [{
+                        value: 0,
+                        label: '不刷新'
+                    },{
+                        value: 5,
+                        label: '5s'
+                    }, {
+                        value: 10,
+                        label: '10s'
+                    }, {
+                        value: 15,
+                        label: '15s'
+                    }, {
+                        value: 20,
+                        label: '20s'
+                    }],
+                    desc: '',
+                    score: 0.0,
+                    checkAll: false,
+                    checkedCities: [],
+                    cities: [],
+                    isIndeterminate: true
+                },
+                select: '',
+                inputCondition: '',
+                rules: {
+                    name: [
+                        {required: true, message: '请输入签到名称', trigger: 'blur'}
+                    ],
+                    type: [
+                        {required: true, message: '请选择签到类型', trigger: 'change'}
+                    ],
+                    date1: [
+                        {type: 'date', required: true, message: '请选择日期', trigger: 'change'}
+                    ],
+                    date2: [
+                        {type: 'date', required: true, message: '请选择时间', trigger: 'change'}
+                    ],
+                    checkedCities: [
+                        {type: 'array', required: true, message: '请至少选择一个小组', trigger: 'change'}
+                    ],
+                    resource: [
+                        {required: true, message: '请选择活动资源', trigger: 'change'}
+                    ],
+                    desc: [
+                        {required: true, message: '请填写活动形式', trigger: 'blur'}
+                    ],
+                    score: [
+                        {required: true, validator:valiNumberPass1, trigger: "blur"}
+                    ]
+                }
+            }
+        },
+        methods: {
+            conditionSearch() {
+                //刷新表格数据
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/signs/" + that.courseId + "/0/0/" + that.currentPage + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+
+            },
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+
+            handleEdit(index, row) {
+                window.location.href = "/course/sign/signDetail?courseId=" + this.courseId + "&signId=" + row.id;
+            },
+            handleStart(index, row) {
+                var userAgent = window.navigator.userAgent;
+
+                if (userAgent.indexOf("Mobile") < 0) {
+                    if (row.alive == 1) {
+                        this.$message({
+                            showClose: true,
+                            message: "此签到已经结束",
+                            type: 'error'
+                        });
+                    } else {
+                        window.open("/teacher/signCode?courseId=" + this.courseId + "&signId=" + row.id + "&type=" + row.type + "&limit=" + row.limitTime);
+                    }
+                }else {
+                    this.$message({
+                        showClose: true,
+                        message: "手机端暂不支持显示签到",
+                        type: 'error'
+                    });
+                }
+
+            },
+            handleDelete(index, row) {
+                if(row.alive==1){
+                    this.$message({
+                        showClose: true,
+                        message: "该签到已经结束",
+                        type: 'error'
+                    });
+                }else {
+                    var that = this;
+                    $.ajax({
+                        type: "put",
+                        url: "/teacher/sign/stop",
+                        data: {
+                            signId: row.id,
+                            courseId: that.courseId,
+                            type: row.type
+                        },
+                        success: function (res) {
+                            // that.showMes(res);
+                            that.conditionSearch();
+                        },
+                        error:function (e) {
+                            that.showErr(e);
+                        }
+                    })
+                }
+            },
+            census(){
+                window.location="/course/sign/census?courseId="+this.courseId;
+            },
+            formatter(row, column) {
+                if (row.type === 1) {
+                    return "扫码签到";
+                } else if (row.type === 2) {
+                    return "位置签到";
+                } else if (row.type === 3) {
+                    return "手势签到";
+                } else return "其他"
+            },
+            formatter2(row, column) {
+                if (row.alive === 1) {
+                    return "已结束";
+                } else return "正在进行"
+            },
+            formatter3(row, column) {
+                if (row.confirm === 1) {
+                    return "未确认";
+                } else return "已确认"
+            },
+            handleCheckAllChange(val) {
+                if (val === true) {
+                    for (var i = 0; i < this.sizeForm.cities.length; i++) {
+                        this.sizeForm.checkedCities.push(this.sizeForm.cities[i].id);
+                    }
+                } else {
+                    this.sizeForm.checkedCities = [];
+                }
+                this.sizeForm.isIndeterminate = false;
+
+            },
+            handleCheckedCitiesChange(value) {
+                let checkedCount = value.length;
+                this.sizeForm.checkAll = checkedCount === this.sizeForm.cities.length;
+                this.sizeForm.isIndeterminate = checkedCount > 0 && checkedCount < this.sizeForm.cities.length;
+                console.log(this.sizeForm.checkedCities)
+            },
+
+            handleSizeChange(val) {
+                // var that = this;
+                // this.pageSize = val;
+                // $.ajax({
+                //     type: "get",
+                //     url: "/teacher/signs/" + that.courseId + "/0/1?" + that.select + "=" + that.inputCondition,
+                //     data: {
+                //         pageSize: that.pageSize
+                //     },
+                //     dataType: "json",
+                //     success: function (result) {
+                //         // that.channels=result;
+                //         that.tableData = result.list;
+                //         that.currentPage = result.pageNum;
+                //         that.total = result.total;
+                //     },
+                //     error: function (e) {
+                //         that.showErr(e);
+                //     }
+                // });
+                //
+                // this.mainTablekey = Math.random();
+
+
+            },
+            handleCurrentChange(val) {
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/signs/" + that.courseId + "/0/" + val + "?" + that.select + "=" + that.inputCondition,
+                    data: {
+                        pageSize: that.pageSize
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        // that.channels=result;
+                        that.tableData = result.list;
+                        that.currentPage = result.pageNum;
+                        that.total = result.total;
+                    },
+                    error: function (e) {
+                        that.showErr(e);
+                    }
+                });
+
+                this.mainTablekey = Math.random();
+            },
+            show() {
+                this.sizeForm.name = '签到['+this.dateName()+']';
+                document.getElementById("before").style.display = "none";
+                document.getElementById("after").style.display = "block";
+
+            },
+            submitTypeChange(val){
+                if (val == 1) {
+                    document.getElementById("sTime").style.display = "block";
+                } else {
+                    document.getElementById("sTime").style.display = "none";
+
+                }
+            },
+            getLocations(){
+                var that = this;
+              $.ajax({
+                  type:"get",
+                  url:"/teacher/sign/locations/0",
+                  data: {},
+                  dataType: "json",
+                  success:function (res) {
+                      // console.log(res);
+                      that.sizeForm.locations = res;
+                      // console.log(that.sizeForm.locations);
+                  },
+                  error:function (e) {
+                      that.showErr(e);
+                  }
+              })
+            },
+            getGroupMap(id){
+                var that = this;
+                $.ajax({
+                    type: "get",
+                    url: "/teacher/groupsMap/" + id + "/0",
+                    data: {},
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        // that.channels=result;
+                        that.sizeForm.cities = result;
+                    },
+                    error: function (e) {
+                        that.showErr(e)
+                    }
+                });
+            },
+            dateName(){
+
+                var d = new Date();
+
+                var year = d.getFullYear(),
+                    month = d.getMonth() + 1,//月份是从0开始的
+                    day = d.getDate(),
+                    hour = d.getHours(),
+                    min = d.getMinutes();
+
+                var newTime = year + '/' +
+                    month + '/' +
+                    day + ' ' +
+                    hour + ':' +
+                    min ;
+
+                return newTime;
+            },
+            onSubmit() {
+                this.$refs['form'].validate((valid) => {
+                    if(valid){
+                        document.getElementById("after").style.display = "none";
+                        document.getElementById("before").style.display = "block";
+                        var that = this;
+                        if(that.sizeForm.type == 2){
+                            // console.log(that.sizeForm.locationId);
+
+                            for (var i = 0; i < that.sizeForm.locations.length; i++) {
+                                // console.log(that.sizeForm.locations[i]);
+                                if(that.sizeForm.locations[i].id == that.sizeForm.locationId){
+                                    that.sizeForm.location = that.sizeForm.locations[i];
+                                }
+                            }
+                            // console.log(that.sizeForm.location);
+
+                        }
+                        $.ajax({
+                            type: "post",
+                            url: "/teacher/sign",
+                            contentType: "application/json;charset=utf-8",
+                            async: false,
+                            data: JSON.stringify({
+                                courseId: that.courseId,
+                                name: that.sizeForm.name,
+                                groupId: that.sizeForm.checkedCities,
+                                score: that.sizeForm.score,
+                                type: that.sizeForm.type,
+                                limit: that.sizeForm.value,
+                                submitType: that.sizeForm.submitType,
+                                submitTime: that.sizeForm.submitTime,
+                                location:that.sizeForm.location.description,
+                                longitude:that.sizeForm.location.lng,
+                                latitude:that.sizeForm.location.lat
+                            }),
+                            dataType: "json",
+                            success: function (result) {
+                                // that.channels=result;
+                                console.log(result.msg);
+                                that.showMes(result);
+                                var userAgent = window.navigator.userAgent;
+
+                                if (userAgent.indexOf("Mobile") < 0) {
+                                    if(result.code==200){
+                                        if(that.sizeForm.submitType == 0){
+                                            window.open("/teacher/signCode?courseId=" + that.courseId + "&signId=" + result.msg + "&type=" + that.sizeForm.type + "&limit=" + that.sizeForm.value);
+                                        }
+                                    }
+                                }
+
+                            },
+                            error: function (e) {
+                                that.showErr(e);
+                            }
+                        });
+                        window.setTimeout(function () {
+                            window.location.reload(true);
+                        }, 1500)
+                    }else{
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+                    }
+                })
+            },
+            quit() {
+                document.getElementById("after").style.display = "none";
+                document.getElementById("before").style.display = "block";
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            }
+
+        },
+        computed: {
+            newRegion() {
+                return this.sizeForm.type;
+            }
+        },
+        watch: {
+            newRegion(val) {
+                if (val == 1) {
+                    document.getElementById("tim").style.display = "block";
+                    document.getElementById("tim2").style.display = "none";
+                } else {
+                    document.getElementById("tim").style.display = "none";
+                    document.getElementById("tim2").style.display = "block";
+
+                }
+            }
+
+        },
+        created() {
+            var that = this;
+            var id = that.getQueryString("courseId");
+            that.courseId = id;
+            $.ajax({
+                type: "get",
+                url: "/teacher/signs/" + id + "/0/0/1",
+                data: {
+                    pageSize: that.pageSize
+                },
+                dataType: "json",
+                success: function (result) {
+                    console.log(result);
+                    // that.channels=result;
+                    // for (var i = 0; i < that.channels.length; i++) {
+                    //     that.channels[i].link="/course?courseId="+that.channels[i].id
+                    // }
+                    that.tableData = result.list;
+                    that.currentPage = result.pageNum;
+                    that.total = result.total;
+                },
+                error: function (e) {
+                    that.showErr(e)
+                }
+            });
+            that.getGroupMap(id);
+            that.getLocations();
+
+        }
+    })
+
+
+</script>
+
+</html>
+

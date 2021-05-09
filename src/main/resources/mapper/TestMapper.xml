@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zut.interactivetools.dao.TestDao">
+    <resultMap id="queryTestCourseByCourseMap" type="TestCourseBean">
+        <id column="id" property="id"></id>
+        <result column="name" property="name"></result>
+        <result column="create_date" property="createDate"></result>
+        <result column="test_id" property="test.id"></result>
+        <result column="limit_time" property="limitTime"></result>
+        <result column="test_body" property="testBody"></result>
+        <result column="test_answer" property="testAnswer"></result>
+        <result column="group_id" property="groupId"></result>
+        <result column="status" property="status"></result>
+        <result column="alive" property="alive"></result>
+        <result column="confirm" property="confirm"></result>
+    </resultMap>
+    <resultMap id="queryTestStudentByTestMap" type="TestStudentBean">
+        <result column="t_id" property="testCourse.id"></result>
+        <result column="group_id" property="group.id"></result>
+        <result column="group_name" property="group.name"></result>
+        <result column="student_id" property="student.id"></result>
+        <result column="name" property="student.name"></result>
+        <result column="major" property="student.major"></result>
+        <result column="the_class" property="student.theClass"></result>
+        <result column="sub_date" property="subDate"></result>
+        <result column="score" property="score"></result>
+        <result column="course_score" property="courseScore"></result>
+        <result column="answer" property="answer"></result>
+        <result column="status" property="status"></result>
+        <result column="confirm" property="confirm"></result>
+    </resultMap>
+    <resultMap id="queryTestStudentByIdMap" type="TestStudentBean">
+        <result column="t_id" property="testCourse.id"></result>
+        <result column="student_id" property="student.id"></result>
+        <result column="name" property="student.name"></result>
+        <result column="major" property="student.major"></result>
+        <result column="the_class" property="student.theClass"></result>
+        <result column="sub_date" property="subDate"></result>
+        <result column="score" property="score"></result>
+        <result column="answer" property="answer"></result>
+        <result column="status" property="status"></result>
+    </resultMap>
+    <select id="queryTestByCourse" resultType="TestBean">
+        select id,name,body,score,answer,status,create_date from test where teacher_id = #{teacher_id} and course_id = #{course_id} and status = #{status}
+        <if test="test_id!=null and test_id!=''">
+            and id like "%"#{test_id}"%"
+        </if>
+        <if test="test_name!=null and test_name!=''">
+            and name like "%"#{test_name}"%"
+        </if>
+        <if test="score!=null and score!=''">
+            and score like "%"#{score}"%"
+        </if>
+        <if test="date!=null and date!=''">
+            and create_date like "%"#{date}"%"
+        </if>
+        order by create_date desc
+    </select>
+    <select id="queryTestByTestId" resultType="TestBean">
+        select id,name,body,score,answer,status from test where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and status = 0
+    </select>
+    <insert id="addTestByCourse">
+        insert into test(id,name,body,score,course_id,teacher_id,answer,status,create_date)
+        values (#{id},#{name},#{body},#{score},#{course_id},#{teacher_id},#{answer},0,#{create_date})
+    </insert>
+    <delete id="delTestByCourse">
+        update test set status = 1 where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id}
+    </delete>
+    <update id="updateTestByCourse">
+        update test set name = #{name},body=#{body},score=#{score},answer=#{answer}
+        where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and status = 0
+    </update>
+    <select id="queryTestCourseByCourse" resultMap="queryTestCourseByCourseMap">
+        select tc.id,tc.name,tc.create_date,tc.test_id,tc.test_body,tc.limit_time,tc.group_id,tc.status,tc.alive,tc.confirm from test_course tc
+        where tc.course_id = #{course_id} and tc.teacher_id = #{teacher_id} and tc.status = #{status} and tc.submit_status = #{submit_status}
+        <if test="id!=null and id!=''">
+            and tc.id like "%"#{id}"%"
+        </if>
+        <if test="name!=null and name!=''">
+            and tc.name like "%"#{name}"%"
+        </if>
+        <if test="date!=null and date!=''">
+            and tc.create_date like "%"#{date}"%"
+        </if>
+        order by tc.create_date desc
+    </select>
+    <select id="queryTestCourseById" resultMap="queryTestCourseByCourseMap">
+        select tc.id,tc.name,tc.create_date,tc.test_id,tc.test_body,tc.test_answer,tc.limit_time,tc.group_id,tc.status,tc.alive,tc.confirm from test_course tc
+        where tc.id = #{id} and  tc.course_id = #{course_id} and tc.teacher_id = #{teacher_id} and tc.status = #{status}
+    </select>
+
+    <select id="queryTestCourseByStudent" resultMap="queryTestCourseByCourseMap">
+        select tc.id,tc.name,tc.create_date,tc.test_id,tc.test_body,tc.test_answer,tc.limit_time,tc.group_id,tc.status,tc.alive,tc.confirm from test_course tc
+        where tc.id = #{id} and  tc.course_id = #{course_id} and tc.status = #{status}
+    </select>
+    <update id="updateTestCourseByCourse">
+        update test_course set name = #{name} where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and status = 0
+    </update>
+    <update id="outTestCourseByCourse">
+        update test_course set alive = 1 where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and status = 0
+    </update>
+    <update id="confirmTestCourseByCourse">
+        update test_course set confirm = 0 where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and status = 0
+    </update>
+    <insert id="addTestCourseByCourse">
+        insert into test_course(id,name,create_date,test_id,limit_time,test_body,test_answer,course_id,teacher_id,group_id,status,alive,confirm,submit_status)
+        values (#{id},#{name},#{create_date},#{test_id},#{limit},#{test_body},#{test_answer},#{course_id},#{teacher_id},#{group_id},0,0,1,#{submit_status})
+    </insert>
+
+    <delete id="delTestCourseByCourse">
+        update test_course set status = 1 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id}
+    </delete>
+    <select id="queryTestStudentByTest" resultMap="queryTestStudentByTestMap">
+        select ts.t_id,ts.group_id,cg.name group_name,ts.student_id,s.name,s.major,s.the_class,ts.sub_date,ts.score,ts.course_score,ts.answer,ts.status,ts.confirm
+        from test_student ts,student s,course_group cg
+        where ts.t_id = #{t_id} and ts.status = #{status} and ts.student_id = s.id and cg.id = ts.group_id
+        <!--<if test="student_id!=null and student_id!=''">-->
+            <!--and ts.student_id like "%"#{student_id}"%"-->
+        <!--</if>-->
+        <!--<if test="student_name!=null and student_name!=''">-->
+            <!--and s.name like "%"#{student_name}"%"-->
+        <!--</if>-->
+        <!--<if test="class_name!=null and class_name!=''">-->
+            <!--and s.the_class like "%"#{class_name}"%"-->
+        <!--</if>-->
+        <!--<if test="major_name!=null and major_name!=''">-->
+            <!--and s.major like "%"#{major_name}"%"-->
+        <!--</if>-->
+        <!--<if test="score!=null and score!=''">-->
+            <!--and ts.score like "%"#{score}"%"-->
+        <!--</if>-->
+    </select>
+    <!--<select id="queryTestStudentById" resultMap="queryTestStudentByIdMap">-->
+        <!--select ts.t_id,ts.student_id,s.name,s.major,s.the_class,ts.sub_date,ts.score,ts.answer,ts.status-->
+        <!--from test_student ts,student s-->
+        <!--where ts.t_id = #{t_id} and ts.status = #{status} and ts.student_id = #{student_id} and s.id = #{student_id}-->
+    <!--</select>-->
+    <select id="queryTestStudentAnswerScoreByStudent" resultType="TestStudentBean">
+        select DISTINCT answer,score,sub_date from test_student where t_id = #{t_id} and student_id = #{student_id} and status = 0
+    </select>
+    <select id="queryTestStudentCourseScoreById" resultType="Double">
+        select ts.course_score
+        from test_student ts
+        where ts.t_id = #{t_id}  and ts.student_id = #{student_id} and group_id = #{group_id} and status = 0
+    </select>
+    <select id="queryTestStudentAnswerByTeacherTest" resultType="String">
+        select answer from test_student where t_id = #{t_id} and status = 0
+    </select>
+    <update id="updateTestStudentByCourse">
+        update test_student set  course_score = #{course_score}, confirm = 0
+        where t_id = #{t_id} and student_id = #{student_id} and group_id = #{group_id} and status = 0 and confirm = 1
+    </update>
+    <delete id="delTestStudentByCourse">
+        update test_student set status = 1 where t_id = #{t_id} and student_id = #{student_id} and group_id = #{group_id}
+    </delete>
+    <insert id="addTestStudentByCourse">
+        insert into test_student (t_id,group_id,student_id,score,course_score,status,confirm) values
+        <foreach collection="list" item="list" separator=",">
+            (#{t_id},#{list.gid},#{list.sid},0,0,0,1)
+        </foreach>
+    </insert>
+    <update id="updateTestStudentByStu">
+        update test_student set sub_date = #{sub_date} , score = #{score} , answer = #{answer}
+        where t_id = #{t_id} and student_id = #{student_id} and status = 0
+    </update>
+    <select id="checkTestCourse" resultType="int">
+        select count(1) from test_course where id = #{id} and teacher_id = #{teacher_id} and course_id = #{course_id} and status = 0
+    </select>
+    <select id="checkTestStudentIsAnswerByStudent" resultType="int">
+        select count(1) from test_student where  t_id = #{t_id} and student_id = #{student_id}  and status = 0 and answer is null
+    </select>
+    <select id="checkTestStudentByStudent" resultType="int">
+        select count(1) from test_student where  t_id = #{t_id} and student_id = #{student_id}  and status = 0
+    </select>
+    <select id="checkTestCourseAlive" resultType="int">
+        select count(1) from test_course where id = #{id} and status = 0 and alive = 0
+    </select>
+    <select id="checkTest" resultType="int">
+        select count(1) from test where id = #{id} and status = 0 and teacher_id = #{teacher_id} and course_id = #{course_id}
+    </select>
+    <update id="updateSubmitStatus">
+        update test_course set submit_status = 0 where id = #{id} and course_id = #{course_id} and teacher_id = #{teacher_id} and  submit_status = 1 and status = 0
+    </update>
+</mapper>

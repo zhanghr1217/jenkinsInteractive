@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="css/index.css" th:href="@{/static/css/index.css}">
+    <style>
+        html,
+        body,
+        #app {
+            height:100% ;
+            width: 100%;
+            margin: 0;
+        }
+        .el-aside{
+            overflow-x:hidden ;
+        }
+        .iconSize {
+            margin-left: 1%;
+            font-size: 24px;
+            color: cornflowerblue;
+            padding-top: 10px;
+            float: right;
+        }
+        .demo-table-expand {
+            font-size: 0;
+        }
+        .demo-table-expand label {
+            width: 90px;
+            color: #99a9bf;
+        }
+        .demo-table-expand .el-form-item {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 50%;
+        }
+       
+    </style>
+
+</head>
+<!-- import Vue before Element -->
+<script src="js/vue.js" th:src="@{/static/js/vue.js}"></script>
+<!-- import JavaScript -->
+<script src="js/index.js" th:src="@{/static/js/index.js}"></script>
+<script src="js/jquery.min.js" th:src="@{/static/js/jquery.min.js}"></script>
+<body>
+
+    <div id="app">　
+       
+        <el-container style="height:100%; border: 1px solid #eee"> 
+
+            <el-header> 
+                <el-page-header @back="goBack" content="我的题库">
+                 </el-page-header>
+                 <div class="iconSize">
+                    <el-button type="primary" icon="el-icon-circle-plus-outline"   @click="show">新建试题</el-button>
+                 </div>
+          </el-header>
+          <div id="before" style="display: block;">
+            <el-main>
+            <el-collapse v-model="activeNames" @change="handleChange">
+                <div v-for="(item,index) in tableData" :key="item.id" >
+                <el-collapse-item  :title=item.name+':'+item.title :name=item.id  >
+                            <el-table :data=item.questions style="width: 100%" :key="mainTablekey">
+                                <el-table-column type="expand">
+                                <template slot-scope="scope">
+                                    <el-form label-position="left" inline class="demo-table-expand">
+                                        <el-form-item label="题目名称">
+                                            <span>{{ scope.row.name }}</span>
+                                        </el-form-item>
+                                        <el-form-item label="题目内容">
+                                            <span>{{ scope.row.question }}</span>
+                                        </el-form-item>
+                                        <el-form-item label="选项">
+
+                                                <div v-for="(g,index) in scope.row.answerBeans" :key="index">
+                                                    <span>{{g.key}}.{{g.value}}</span>
+                                                </div>
+
+                                        </el-form-item>
+                                        <el-form-item label="正确答案">
+                                            <div v-for="(g,index) in scope.row.realBeans" :key="index" style="display: inline-block">
+                                                <span>{{g}}</span>
+                                            </div>
+                                        </el-form-item>
+                                    </el-form>
+
+                                </template>
+                                </el-table-column>
+                                <el-table-column label="创建日期" width="180">
+                                    <template slot-scope="scope">
+                                        <i class="el-icon-time"></i>
+                                        <span>{{scope.row.createDate}}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="题目名称" width="180">
+                                    <template slot-scope="scope">
+                                    <span>{{ scope.row.name }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="题目分值" width="180">
+                                    <template slot-scope="scope">
+                                        <span>{{ scope.row.score }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="操作">
+                                    <template slot-scope="scope">
+                                        <el-button size="mini" type="success" @click="handleEdit(scope.$index, scope.row)">修改</el-button>
+                                        <el-popconfirm
+                                                icon="el-icon-info"
+                                                icon-color="red"
+                                                title="确定删除吗？"
+                                                @confirm="handleDelete(scope.$index, scope.row, item.id)"
+                                        >
+                                        <el-button size="mini" type="danger" slot="reference">删除</el-button>
+                                        </el-popconfirm>
+                                    </template>
+                                </el-table-column>
+                    </el-table>
+                </el-collapse-item>
+                </div>
+              </el-collapse>
+                <el-button type="success"  @click="sectionFormVisible = true">新建章节</el-button>
+
+                    <el-dialog title="新建章节" :visible.sync="sectionFormVisible">
+                        <el-form :model="formSection" ref="form2" :rules="rules2">
+                            <el-form-item label="章节名称" :label-width="formLabelWidth" prop="name">
+                                <el-input v-model="formSection.name" autocomplete="off"></el-input>
+                            </el-form-item>
+                            <el-form-item label="章节标题" :label-width="formLabelWidth" prop="title">
+                                <el-input v-model="formSection.title" autocomplete="off"></el-input>
+                            </el-form-item>
+                        </el-form>
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="sectionFormVisible = false">取 消</el-button>
+                            <el-button type="primary" @click="addSection">确 定</el-button>
+                        </div>
+                    </el-dialog>
+
+          </el-main>
+
+        </div>
+
+            <div id="edit" style="display: none;">
+                <el-container>
+                    <el-form ref="form3" :model="sizeForm2" :rules="rules3" label-width="80px" size="mini" style="margin:3% 0 0 3%;width: 80%;">
+                        <el-form-item label="题目名称" prop="name">
+                            <el-input v-model="sizeForm2.name"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="题目内容" prop="question">
+                            <el-input type="textarea" :autosize="{ minRows: 4, maxRows: 8}" v-model="sizeForm2.question"></el-input>
+                        </el-form-item>
+                        <el-form-item label="题目选项"> <el-button @click="addDomain2">添加选项</el-button></el-form-item>
+
+                        <el-form-item
+                                v-for="(domain, index) in sizeForm2.domains"
+                                :label="String.fromCharCode('A'.charCodeAt()+index)"
+                                :key="String.fromCharCode('A'.charCodeAt()+index)"
+                                :prop="'domains.' + index + '.value'"
+                        >
+                            <el-input style="width: 68%;" v-model="domain.value"></el-input><el-button @click.prevent="removeDomain2(domain)">删除</el-button>
+                        </el-form-item>
+
+                        <el-form-item label="投票">
+                            <el-switch v-model="sizeForm2.vote">
+                            </el-switch>
+                        </el-form-item>
+
+                        <el-form-item v-if="sizeForm2.vote==true" label="最多选择">
+                            <el-input-number v-model="sizeForm2.voteNum" @change="handleChange" :min="1" :max="sizeForm2.domains.length" label="描述文字"></el-input-number>&nbsp;&nbsp;项
+                        </el-form-item>
+
+
+                        <el-form-item v-if="sizeForm2.vote==false" label="正确答案">
+                            <el-checkbox-group v-model="sizeForm2.checkList">
+                                <el-checkbox    v-for="(domain, index) in sizeForm2.domains"
+                                                :label="String.fromCharCode('A'.charCodeAt()+index)"
+                                                :key="domain.key">
+                                </el-checkbox>
+                            </el-checkbox-group>
+                        </el-form-item>
+
+                        <el-form-item label="题目分数" prop="score">
+                            <el-input v-model="sizeForm2.score" style="width:7%;"></el-input>分
+                        </el-form-item>
+
+
+
+                        <!--<el-form-item label="添加到" prop="value">-->
+                            <!--<el-select v-model="sizeForm2.value" placeholder="请选择">-->
+                                <!--<el-option v-for="item in sizeForm2.options2" :key="item.value" :label="item.label"-->
+                                           <!--:value="item.value">-->
+                                <!--</el-option>-->
+                            <!--</el-select>-->
+                        <!--</el-form-item>-->
+                        <el-form-item size="mini">
+                            <el-button @click="quitEdit">取消</el-button>
+                            <el-button id="editQ" type="primary" @click="saveEdit">保存</el-button>
+                        </el-form-item>
+
+                    </el-form>
+                </el-container>
+            </div>
+
+          <div id="after" style="display: none;">
+            <el-container>
+            <el-form ref="form" :model="sizeForm" :rules="rules" label-width="80px" size="mini" style="margin:3% 0 0 3%;width: 80%;">
+                <el-form-item label="题目名称" prop="name">
+                  <el-input v-model="sizeForm.name"></el-input>
+                </el-form-item>
+
+                <el-form-item label="题目内容" prop="question">
+                    <el-input type="textarea" :autosize="{ minRows: 4, maxRows: 8}" v-model="sizeForm.question"></el-input>
+                </el-form-item>
+                <el-form-item label="题目选项"> <el-button @click="addDomain">添加选项</el-button></el-form-item>
+               
+                <el-form-item
+                v-for="(domain, index) in sizeForm.domains"
+                :label="String.fromCharCode('A'.charCodeAt()+index)"
+                :key="String.fromCharCode('A'.charCodeAt()+index)"
+                :prop="'domains.' + index + '.value'"
+              >
+                <el-input style="width: 68%;" v-model="domain.value"></el-input><el-button @click.prevent="removeDomain(domain)">删除</el-button>
+              </el-form-item>
+
+                <el-form-item label="投票">
+                    <el-switch v-model="sizeForm.vote">
+                    </el-switch>
+                </el-form-item>
+
+                <el-form-item v-if="sizeForm.vote==true" label="最多选择">
+                    <el-input-number v-model="sizeForm.voteNum" @change="handleChange" :min="1" :max="sizeForm.domains.length" label="描述文字"></el-input-number>&nbsp;&nbsp;项
+                </el-form-item>
+
+              <el-form-item v-if="sizeForm.vote==false" label="正确答案">
+                    <el-checkbox-group v-model="sizeForm.checkList">
+                        <el-checkbox    v-for="(domain, index) in sizeForm.domains"
+                        :label="String.fromCharCode('A'.charCodeAt()+index)"
+                        :key="domain.key">
+                        </el-checkbox>
+                    </el-checkbox-group>
+            </el-form-item>
+
+             <el-form-item label="题目分数" prop="score">
+                <el-input v-model="sizeForm.score" style="width:7%;"></el-input>分
+              </el-form-item>
+
+
+
+                <el-form-item label="添加到" prop="value">
+                    <el-select v-model="sizeForm.value" placeholder="请选择">
+                        <el-option v-for="item in sizeForm.options2" :key="item.value" :label="item.label"
+                            :value="item.value">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item size="mini">
+                    <el-button @click="quit">取消</el-button>
+                  <el-button id="createQ" type="primary" @click="onSubmit">立即创建</el-button>
+
+                </el-form-item>
+
+              </el-form>
+            </el-container>
+        </div>
+        </el-container>
+
+    </div>
+</body>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            var valiNumberPass1 = (rule, value, callback) => {//包含小数的数字
+                let reg = /^[+-]?(0|([1-9]\d*))(\.\d+)?$/g;
+                if (value === '') {
+                    callback(new Error('请输入内容'));
+                } else if (!reg.test(value)) {
+                    callback(new Error('请输入数字'));
+                } else {
+                    callback();
+                }
+            };
+            return { 
+                visible: false,
+                libraryId:"",
+                activeNames: "",
+                mainTablekey:0,
+                tableData: [],
+                rules:{
+                    name: [
+                        {required: true, message: '请填写名称', trigger: 'blur'}
+                    ],
+                    question:[
+                        {required: true, message: '请填写内容', trigger: 'blur'}
+                    ],
+                    score:[
+                        {required: true, validator:valiNumberPass1, trigger: "blur"}
+                    ],
+                    value:[
+                        {required: true, message: '请选择章节', trigger: 'change'}
+                    ]
+                },
+                rules3:{
+                    name: [
+                        {required: true, message: '请填写名称', trigger: 'blur'}
+                    ],
+                    question:[
+                        {required: true, message: '请填写内容', trigger: 'blur'}
+                    ],
+                    score:[
+                        {required: true, validator:valiNumberPass1, trigger: "blur"}
+                    ]
+                },
+                rules2:{
+                    name: [
+                        {required: true, message: '请填写名称', trigger: 'blur'}
+                    ],
+                    title: [
+                        {required: true, message: '请填写标题', trigger: 'blur'}
+                    ]
+                },
+
+                sectionFormVisible:false,
+                formLabelWidth: '120px',
+
+                formSection:{
+                    name:'',
+                    title:''
+                },
+                
+                sizeForm: {
+                    vote:false,
+                    voteNum:1,
+                    name: '',
+                    value:"",
+                    question:'',
+                    score:'',
+                    domains: [{
+                        key:'A',
+                        value: ''
+                    }],
+                    options2: [],
+                    checkList: []
+                },
+
+                sizeForm2: {
+                    vote:false,
+                    voteNum:1,
+                    id:"",
+                    name: '',
+                    value:"",
+                    question:'',
+                    score:'',
+                    domains: [{
+                        key:'A',
+                        value: ''
+                    }],
+                    options2: [],
+                    checkList: []
+                },
+                
+                }
+        },
+        methods:{
+            showErr(response) {
+                this.$message({
+                    showClose: true,
+                    message: response.status + " " + response.statusText,
+                    type: 'error'
+                });
+            },
+            showMes(response) {
+                if (response.code == 200) {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: response.desc,
+                        type: 'error'
+                    });
+                }
+            },
+            getQueryString(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]);
+                return null;
+            },
+            handleEdit(index, row) {
+                document.getElementById("before").style.display="none";
+                document.getElementById("after").style.display="none";
+                document.getElementById("edit").style.display="block";
+                this.sizeForm2.name=row.name;
+                this.sizeForm2.question = row.question;
+                this.sizeForm2.score = row.score;
+                this.sizeForm2.checkList = row.realBeans;
+                this.sizeForm2.domains=row.answerBeans;
+                this.sizeForm2.id=row.id;
+                this.sizeForm2.vote = (row.type==0);
+                this.sizeForm2.voteNum = row.maxNum;
+            },
+            saveEdit(){
+                this.$refs['form3'].validate((valid) => {
+                    if(valid) {
+                        if(this.sizeForm2.domains.length>0){
+                            document.getElementById("edit").style.display="none";
+                            document.getElementById("before").style.display="block";
+                            var that = this;
+                            for(var i=0;i<that.sizeForm2.domains.length;i++){
+                                that.sizeForm2.domains[i].key=String.fromCharCode('A'.charCodeAt()+i);
+                            }
+                            if(that.sizeForm2.vote){
+                                that.sizeForm2.checkList = [];
+                            }
+                            $.ajax({
+                                type:"put",
+                                url:"/teacher/library/section/question",
+                                contentType: "application/json;charset=utf-8",
+                                async:false,
+                                data:JSON.stringify({
+                                    libraryId:that.libraryId,
+                                    name:that.sizeForm2.name,
+                                    question:that.sizeForm2.question,
+                                    answer:that.sizeForm2.domains,
+                                    realAnswer:that.sizeForm2.checkList,
+                                    score:that.sizeForm2.score,
+                                    questionId:that.sizeForm2.id,
+                                    max_num:that.sizeForm2.voteNum
+                                }),
+                                success:function (res) {
+                                    that.showMes(res);
+                                },
+                                error:function (e) {
+                                    that.showErr(e);
+                                }
+                            });
+                            this.getInfo();
+                            this.activeNames=this.activeNames;
+                        }else {
+                            this.$message({
+                                showClose: true,
+                                message: "请设置选项",
+                                type: 'error'
+                            });
+                        }
+
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+            }
+            })
+
+
+            },
+            quitEdit(){
+                document.getElementById("before").style.display="block";
+                document.getElementById("after").style.display="none";
+                document.getElementById("edit").style.display="none";
+            },
+            handleDelete(index, row, id) {
+                console.log(index, row);
+                console.log(id);
+                var that = this;
+                $.ajax({
+                    type:"delete",
+                    url:"/teacher/library/section/question",
+                    async:false,
+                    data:{
+                        questionId:row.id,
+                        libraryId:that.libraryId
+                    },
+                    success:function (res) {
+                        that.showMes(res);
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                });
+                // window.setTimeout(function () {
+                //     window.location.reload(true);
+                // }, 1000);
+                this.getInfo();
+                this.activeNames=id;
+
+
+            },
+            handleChange(val) {
+                console.log(val);
+            },
+            goBack(){
+                window.location.href="/questionList";
+            },
+            show(){
+                document.getElementById("before").style.display="none";
+                document.getElementById("after").style.display="block";
+                document.getElementById("edit").style.display="none";
+            },
+            addSection(){
+                this.$refs['form2'].validate((valid) => {
+                    if(valid) {
+                        var that = this;
+                        $.ajax({
+                            type: "post",
+                            url: "/teacher/library/section",
+                            async:false,
+                            data: {
+                                libraryId: that.libraryId,
+                                name: that.formSection.name,
+                                title: that.formSection.title
+                            },
+                            success: function (res) {
+                                that.showMes(res);
+                            },
+                            error: function (e) {
+                                that.showErr(e);
+                            }
+                        });
+                        this.getInfo();
+                        this.activeNames='0';
+                        this.sectionFormVisible = false
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+            }
+            })
+
+            },
+            onSubmit() {
+
+                this.$refs['form'].validate((valid) => {
+                    if (valid) {
+                        if(this.sizeForm.domains.length>0){
+                            document.getElementById("after").style.display="none";
+                            document.getElementById("before").style.display="block";
+                            var that = this;
+                            for(var i=0;i<that.sizeForm.domains.length;i++){
+                                that.sizeForm.domains[i].key=String.fromCharCode('A'.charCodeAt()+i);
+                            }
+                            if(that.sizeForm.vote){
+                                that.sizeForm.checkList = [];
+                            }
+
+                            $.ajax({
+                                type:"post",
+                                url:"/teacher/library/section/question",
+                                async:false,
+                                contentType: "application/json;charset=utf-8",
+                                data:JSON.stringify({
+                                    libraryId:that.libraryId,
+                                    sectionId:that.sizeForm.value,
+                                    name:that.sizeForm.name,
+                                    question:that.sizeForm.question,
+                                    answer:that.sizeForm.domains,
+                                    realAnswer:that.sizeForm.checkList,
+                                    score:that.sizeForm.score,
+                                    max_num:that.sizeForm.voteNum
+                                }),
+                                success:function (res) {
+                                    that.showMes(res);
+                                },
+                                error:function (e) {
+                                    that.showErr(e);
+                                }
+                            });
+                            this.getInfo();
+                            this.activeNames=that.sizeForm.value;
+                        }else {
+                            this.$message({
+                                showClose: true,
+                                message: "请设置选项",
+                                type: 'error'
+                            });
+                        }
+
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: "参数错误",
+                            type: 'error'
+                        });
+            }
+            });
+
+
+
+            },
+            quit(){
+                document.getElementById("after").style.display="none";
+                document.getElementById("before").style.display="block";
+                document.getElementById("edit").style.display="none";
+            },
+
+            removeDomain(item) {
+                var index = this.sizeForm.domains.indexOf(item);
+                if (index !== -1) {
+                    this.sizeForm.domains.splice(index, 1)
+                }
+                this.sizeForm.checkList=[];
+                this.sizeForm.voteNum = 1;
+            },
+            addDomain() {
+                this.sizeForm.domains.push({
+                    key: String.fromCharCode('A'.charCodeAt()+this.sizeForm.domains.length),
+                    value: '',
+
+                });
+            },
+            removeDomain2(item) {
+                var index = this.sizeForm2.domains.indexOf(item);
+                if (index !== -1) {
+                    this.sizeForm2.domains.splice(index, 1)
+                }
+                this.sizeForm2.checkList=[];
+                this.sizeForm2.voteNum = 1;
+            },
+            addDomain2() {
+                this.sizeForm2.domains.push({
+                    key: String.fromCharCode('A'.charCodeAt()+this.sizeForm2.domains.length),
+                    value: '',
+
+                });
+            },
+            getInfo(){
+                var that = this;
+                $.ajax({
+                    type:"get",
+                    url:"/teacher/library/question/"+that.libraryId+"/0/0",
+                    data:{},
+                    success:function (res) {
+                        console.log(res);
+                        that.tableData = res;
+                        that.sizeForm.options2=[];
+                        for (var i = 0; i < res.length; i++) {
+                            var value = res[i].id;
+                            var label = res[i].name;
+                            var obj = {};
+                            obj.value = value;
+                            obj.label = label;
+                            that.sizeForm.options2.push(obj);
+                        }
+                    },
+                    error:function (e) {
+                        that.showErr(e);
+                    }
+                });
+                this.mainTablekey = Math.random();
+            }
+      },
+        created(){
+            this.libraryId = this.getQueryString("libraryId");
+            this.getInfo();
+
+        }
+    })
+</script>
+
+</html>
